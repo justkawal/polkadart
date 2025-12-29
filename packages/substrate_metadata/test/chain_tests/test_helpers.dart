@@ -4,6 +4,43 @@ import 'dart:io';
 import 'package:polkadart_scale_codec/polkadart_scale_codec.dart';
 import 'package:substrate_metadata/substrate_metadata.dart';
 
+/// Finds the monorepo root directory by looking for the 'chain' directory.
+/// This allows tests to work both when run from:
+/// - The monorepo root (via `melos test:chain` or `dart test packages/...`)
+/// - The package directory (via `dart test` from packages/substrate_metadata)
+String _findMonorepoRoot() {
+  var current = Directory.current;
+
+  // Walk up the directory tree looking for the 'chain' directory
+  while (current.path != current.parent.path) {
+    final chainDir = Directory('${current.path}/chain');
+    if (chainDir.existsSync()) {
+      return current.path;
+    }
+    current = current.parent;
+  }
+
+  throw StateError(
+    'Could not find monorepo root (directory containing "chain" folder). '
+    'Current directory: ${Directory.current.path}',
+  );
+}
+
+/// Cached monorepo root path
+String? _cachedMonorepoRoot;
+
+/// Returns the path to the chain directory, works from any location in the monorepo.
+String get chainBasePath {
+  _cachedMonorepoRoot ??= _findMonorepoRoot();
+  return '$_cachedMonorepoRoot/chain';
+}
+
+/// Resolves a chain-relative path to an absolute path.
+/// Example: chainPath('polkadot/v14/events.jsonl') -> '/path/to/monorepo/chain/polkadot/v14/events.jsonl'
+String chainPath(String relativePath) {
+  return '$chainBasePath/$relativePath';
+}
+
 /// Helper class to cache metadata and codecs
 class MetadataInfo {
   final RuntimeMetadataPrefixed prefixedMetadata;

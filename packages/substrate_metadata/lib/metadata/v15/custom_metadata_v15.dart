@@ -6,9 +6,7 @@ class CustomMetadataV15 {
 
   static const $CustomMetadataV15 codec = $CustomMetadataV15._();
 
-  Map<String, dynamic> toJson() => {
-    'map': map.map((k, v) => MapEntry(k, v.toJson())),
-  };
+  Map<String, dynamic> toJson() => {'map': map.map((k, v) => MapEntry(k, v.toJson()))};
 }
 
 class $CustomMetadataV15 with Codec<CustomMetadataV15> {
@@ -81,6 +79,5 @@ class $CustomMetadataV15Value with Codec<CustomMetadataV15Value> {
   }
 
   @override
-  bool isSizeZero() =>
-      CompactCodec.codec.isSizeZero() && U8SequenceCodec.codec.isSizeZero();
+  bool isSizeZero() => CompactCodec.codec.isSizeZero() && U8SequenceCodec.codec.isSizeZero();
 }

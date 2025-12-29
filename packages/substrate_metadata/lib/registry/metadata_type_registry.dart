@@ -690,7 +690,10 @@ class MetadataTypeRegistry {
   /// Get a runtime API method by name (V16)
   ///
   /// Returns the method metadata if found, null otherwise.
-  RuntimeApiMethodMetadataV16? getRuntimeApiMethodV16(final String apiName, final String methodName) {
+  RuntimeApiMethodMetadataV16? getRuntimeApiMethodV16(
+    final String apiName,
+    final String methodName,
+  ) {
     final api = getRuntimeApiV16(apiName);
     if (api == null) return null;
 
@@ -716,7 +719,10 @@ class MetadataTypeRegistry {
   /// Get deprecation info for a storage entry (V16 only)
   ///
   /// Returns null if using V14/V15 metadata or if entry not found.
-  ItemDeprecationInfo? getStorageDeprecationInfo(final String palletName, final String storageName) {
+  ItemDeprecationInfo? getStorageDeprecationInfo(
+    final String palletName,
+    final String storageName,
+  ) {
     final storage = getStorageMetadata(palletName, storageName);
     if (storage is StorageEntryMetadataV16) {
       return storage.deprecationInfo;
@@ -727,7 +733,10 @@ class MetadataTypeRegistry {
   /// Get deprecation info for a constant (V16 only)
   ///
   /// Returns null if using V14/V15 metadata or if constant not found.
-  ItemDeprecationInfo? getConstantDeprecationInfo(final String palletName, final String constantName) {
+  ItemDeprecationInfo? getConstantDeprecationInfo(
+    final String palletName,
+    final String constantName,
+  ) {
     final constant = getConstantMetadata(palletName, constantName);
     if (constant is PalletConstantMetadataV16) {
       return constant.deprecationInfo;
