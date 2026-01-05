@@ -15,7 +15,7 @@ dependencies:
   polkadart_scale_codec: ^2.0.0 # Apache 2.0
   substrate_metadata: ^2.0.0 # Apache 2.0
   ss58: ^2.0.0
-  equatable: ^2.0.7
+  equatable: ^2.0.8
   json_serializable: ^6.11.3
   json_annotation: ^4.9.0
 

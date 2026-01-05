@@ -10,7 +10,7 @@ environment:
 
 dependencies: 
   convert: ^3.0.2 # BSD-3-Clause
-  equatable: ^2.0.5 # MIT
+  equatable: ^2.0.8 # MIT
   hashlib_codecs: ^3.0.1
   quiver: ^3.2.1 # Apache-2.0
   typed_data: ^1.3.1 # BSD-3-Clause
