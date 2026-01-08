@@ -23,4 +23,4 @@ dev_dependencies:
   polkadart_keyring: ^0.7.2
   build_runner: ^2.10.4
   lints: ^6.0.0
-  test: ^1.28.0
+  test: 1.29.0
