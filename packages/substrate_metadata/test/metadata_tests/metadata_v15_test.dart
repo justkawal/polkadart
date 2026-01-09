@@ -14,9 +14,7 @@ void main() {
       // Load the downloaded V15 metadata
       final metadataFile = File('./test/metadata_tests/v15/westend_v15_metadata.json');
       if (!metadataFile.existsSync()) {
-        throw Exception(
-          'V15 metadata file not found. Run: python3 scripts/fetch_v15_metadata.py --chain westend',
-        );
+        throw Exception('V15 metadata file not found.');
       }
 
       metadataJson = jsonDecode(metadataFile.readAsStringSync());

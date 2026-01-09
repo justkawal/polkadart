@@ -5,7 +5,8 @@ import 'package:polkadart_scale_codec/io/io.dart' show Input, HexOutput;
 import 'package:polkadart_scale_codec/utils/utils.dart' show decodeHex;
 import 'package:substrate_metadata/derived_codecs/derived_codecs.dart' show ExtrinsicsCodec;
 import 'package:substrate_metadata/metadata/metadata.dart' show RuntimeMetadataPrefixed;
-import 'package:substrate_metadata/models/models.dart' show UncheckedExtrinsic, RuntimeCall;
+import 'package:substrate_metadata/models/models.dart'
+    show UncheckedExtrinsic, ExtrinsicType, RuntimeCall;
 import 'package:substrate_metadata/registry/metadata_type_registry.dart' show MetadataTypeRegistry;
 import 'package:test/expect.dart';
 import 'package:test/scaffolding.dart';
@@ -98,6 +99,7 @@ List<UncheckedExtrinsic> _decodedExtrinsicMap() {
   return [
     UncheckedExtrinsic(
       version: 4,
+      type: ExtrinsicType.bare,
       call: RuntimeCall(
         palletName: 'ParaInherent',
         palletIndex: 54,

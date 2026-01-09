@@ -7,13 +7,16 @@ extension RuntimeMetadataExtensions on RuntimeMetadata {
     return switch (this) {
       final RuntimeMetadataV14 v14 => v14.pallets,
       final RuntimeMetadataV15 v15 => v15.pallets,
+      final RuntimeMetadataV16 v16 => v16.pallets,
     };
   }
 
+  /// Get extrinsic metadata
   ExtrinsicMetadata get extrinsic {
     return switch (this) {
       final RuntimeMetadataV14 v14 => v14.extrinsic,
       final RuntimeMetadataV15 v15 => v15.extrinsic,
+      final RuntimeMetadataV16 v16 => v16.extrinsic,
     };
   }
 
@@ -21,12 +24,13 @@ extension RuntimeMetadataExtensions on RuntimeMetadata {
     return switch (this) {
       final RuntimeMetadataV14 v14 => v14.types,
       final RuntimeMetadataV15 v15 => v15.types,
+      final RuntimeMetadataV16 v16 => v16.types,
     };
   }
 
   /// Get outer enum types
   ///
-  /// For V15, returns the direct outer enum references.
+  /// For V15/V16, returns the direct outer enum references.
   /// For V14, returns the call type from extrinsic metadata.
   OuterEnums get outerEnums {
     return switch (this) {
@@ -39,6 +43,11 @@ extension RuntimeMetadataExtensions on RuntimeMetadata {
         callType: v15.outerEnums.callType,
         eventType: v15.outerEnums.eventType,
         errorType: v15.outerEnums.errorType,
+      ),
+      final RuntimeMetadataV16 v16 => OuterEnums(
+        callType: v16.outerEnums.callType,
+        eventType: v16.outerEnums.eventType,
+        errorType: v16.outerEnums.errorType,
       ),
     };
   }

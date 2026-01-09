@@ -15,7 +15,7 @@ class PalletCallMetadata {
   /// Codec instance for PalletCallMetadata
   static const $PalletCallMetadata codec = $PalletCallMetadata._();
 
-  Map<String, int> toJson() => {'type': type};
+  Map<String, dynamic> toJson() => {'type': type};
 }
 
 /// Codec for PalletCallMetadata

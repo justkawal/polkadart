@@ -15,7 +15,7 @@ class PalletEventMetadata {
   /// Codec instance for PalletEventMetadata
   static const $PalletEventMetadata codec = $PalletEventMetadata._();
 
-  Map<String, int> toJson() => {'type': type};
+  Map<String, dynamic> toJson() => {'type': type};
 }
 
 /// Codec for PalletEventMetadata
