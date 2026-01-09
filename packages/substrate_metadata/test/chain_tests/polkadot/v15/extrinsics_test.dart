@@ -66,10 +66,6 @@ void main() {
 
       final extrinsicsHexList = extrinsics.map((e) => e as String).toList();
 
-      // TODO: Remove this skip once extrinsic v5 is supported
-      // See: unchecked_extrinsic_codec.dart - needs to support version 5
-      if (hasExtrinsicVersion5(extrinsicsHexList)) continue;
-
       test('block $blockNumber', () {
         final specVersion = findSpecVersionForBlock(blockNumber, _runtimeUpgrades);
         final metadataInfo = getOrLoadMetadata(specVersion, _metadataDir, 'polkadot_v15');
@@ -110,10 +106,6 @@ void main() {
       if (_upgradeBlockNumbers.contains(blockNumber)) continue;
 
       final extrinsicsHexList = extrinsics.map((e) => e as String).toList();
-
-      // TODO: Remove this skip once extrinsic v5 is supported
-      // See: unchecked_extrinsic_codec.dart - needs to support version 5
-      if (hasExtrinsicVersion5(extrinsicsHexList)) continue;
 
       test('block $blockNumber', () {
         final specVersion = findSpecVersionForBlock(blockNumber, _runtimeUpgrades);

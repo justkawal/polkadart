@@ -2,12 +2,27 @@ part of derived_codecs;
 
 class SignedExtensionsCodec with Codec<Map<String, dynamic>> {
   final MetadataTypeRegistry registry;
-  late final List<SignedExtensionMetadata> extensions;
+  late final List<ExtensionInfo> extensions;
   late final List<Codec> codecs;
 
   SignedExtensionsCodec(this.registry) {
-    extensions = registry.extrinsic.signedExtensions;
-    codecs = extensions.map((e) => registry.codecFor(e.type)).toList();
+    // Handle both V14/V15 SignedExtensions and V16 TransactionExtensions
+    final extrinsic = registry.extrinsic;
+
+    if (extrinsic is ExtrinsicMetadataV16) {
+      // V16: Use transaction extensions for the primary extrinsic version
+      final txExtensions = extrinsic.extensionsForVersion(extrinsic.version);
+      extensions = txExtensions
+          .map((final te) => ExtensionInfo(identifier: te.identifier, type: te.type))
+          .toList(growable: false);
+    } else {
+      // V14/V15: Use legacy signed extensions
+      extensions = extrinsic.signedExtensions
+          .map((final se) => ExtensionInfo(identifier: se.identifier, type: se.type))
+          .toList(growable: false);
+    }
+
+    codecs = extensions.map((final extension) => registry.codecFor(extension.type)).toList();
   }
 
   @override
@@ -20,14 +35,14 @@ class SignedExtensionsCodec with Codec<Map<String, dynamic>> {
   }
 
   @override
-  void encodeTo(Map<String, dynamic> value, Output output) {
+  void encodeTo(final Map<String, dynamic> value, final Output output) {
     for (int i = 0; i < extensions.length; i++) {
       final key = extensions[i].identifier;
       final val = value[key];
 
       if (val == null) {
         if (codecs[i] is! NullCodec && codecs[i].isSizeZero() == false) {
-          throw MetadataException('Missing signed extension value for $key.');
+          throw MetadataException('Missing extension value for $key.');
         }
         // We can continue to next because this codec doesn't encode anything.
         // And even calling encode would not have any impact on the size
@@ -42,7 +57,7 @@ class SignedExtensionsCodec with Codec<Map<String, dynamic>> {
   }
 
   @override
-  int sizeHint(Map<String, dynamic> value) {
+  int sizeHint(final Map<String, dynamic> value) {
     int size = 0;
 
     for (int i = 0; i < extensions.length; i++) {
@@ -50,7 +65,7 @@ class SignedExtensionsCodec with Codec<Map<String, dynamic>> {
       final val = value[key];
 
       if (val == null) {
-        throw MetadataException('Missing signed extension value for $key');
+        throw MetadataException('Missing extension value for $key');
       }
 
       size += codecs[i].sizeHint(val);
@@ -60,5 +75,12 @@ class SignedExtensionsCodec with Codec<Map<String, dynamic>> {
   }
 
   @override
-  bool isSizeZero() => codecs.every((codec) => codec.isSizeZero());
+  bool isSizeZero() => codecs.every((final codec) => codec.isSizeZero());
+}
+
+/// Internal helper class to unify SignedExtensionMetadata and TransactionExtensionMetadata
+class ExtensionInfo {
+  final String identifier;
+  final int type;
+  const ExtensionInfo({required this.identifier, required this.type});
 }

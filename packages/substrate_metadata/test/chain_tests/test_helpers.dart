@@ -171,51 +171,6 @@ MetadataInfo getOrLoadMetadata(int specVersion, String metadataDir, String cache
   return metadataInfo;
 }
 
-/// Check if any extrinsic in the list has version 5
-/// TODO: Remove this once extrinsic v5 is supported in the codebase
-/// See: unchecked_extrinsic_codec.dart - needs to support version 5
-bool hasExtrinsicVersion5(List<String> extrinsicsHexList) {
-  for (final extHex in extrinsicsHexList) {
-    // Remove 0x prefix
-    final hex = extHex.startsWith('0x') ? extHex.substring(2) : extHex;
-    if (hex.isEmpty) continue;
-
-    // First bytes are compact-encoded length, then version byte
-    // Compact encoding: if first byte & 0x03 == 0, length is byte >> 2
-    // We need to skip the length prefix to get to the version byte
-    final firstByte = int.parse(hex.substring(0, 2), radix: 16);
-    final mode = firstByte & 0x03;
-
-    int versionByteOffset;
-    if (mode == 0) {
-      // Single byte mode
-      versionByteOffset = 2; // 1 byte = 2 hex chars
-    } else if (mode == 1) {
-      // Two byte mode
-      versionByteOffset = 4; // 2 bytes = 4 hex chars
-    } else if (mode == 2) {
-      // Four byte mode
-      versionByteOffset = 8; // 4 bytes = 8 hex chars
-    } else {
-      // Big integer mode - skip for now
-      continue;
-    }
-
-    if (hex.length < versionByteOffset + 2) continue;
-
-    final versionByte = int.parse(
-      hex.substring(versionByteOffset, versionByteOffset + 2),
-      radix: 16,
-    );
-    final version = versionByte & 0x7F; // Mask out the signed bit
-
-    if (version == 5) {
-      return true;
-    }
-  }
-  return false;
-}
-
 /// Encode extrinsics list as SCALE Vec<Extrinsic>
 String encodeExtrinsicsAsVec(List<String> extrinsicsHexList) {
   final buffer = StringBuffer();

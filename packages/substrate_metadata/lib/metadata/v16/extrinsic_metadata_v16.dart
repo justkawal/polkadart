@@ -43,8 +43,17 @@ class ExtrinsicMetadataV16 extends ExtrinsicMetadata {
   int get version => versions.isNotEmpty ? versions.first : 0;
 
   /// Get transaction extensions for a specific version
-  List<TransactionExtensionMetadata> extensionsForVersion(int ver) {
-    final indices = transactionExtensionsByVersion[ver];
+  ///
+  /// Falls back to version 0 if the specific version is not found.
+  /// Version 0 acts as a default/fallback for all extrinsic versions.
+  List<TransactionExtensionMetadata> extensionsForVersion(final int ver) {
+    List<int>? indices = transactionExtensionsByVersion[ver];
+
+    // Fallback to version 0 if the specific version is not found
+    // Version 0 appears to be used as a default in Polkadot metadata
+    if (indices == null && ver != 0) {
+      indices = transactionExtensionsByVersion[0];
+    }
     if (indices == null) return [];
     return indices
         .where((i) => i < transactionExtensions.length)
