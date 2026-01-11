@@ -40,7 +40,7 @@ Future<void> main(List<String> arguments) async {
   print('Ecdsa Wallet: ${ecdsaWallet.address}');
 
   {
-    final paseoProvider = Provider.fromUri(Uri.parse('wss://paseo-rpc.dwellir.com'));
+    final paseoProvider = Provider.fromUri(Uri.parse('wss://paseo-rpc.n.dwellir.com'));
     final paseoApi = Paseo(paseoProvider);
 
     // Get info necessary to build an extrinsic
@@ -93,6 +93,10 @@ Future<void> main(List<String> arguments) async {
         nonce: nonce1,
         tip: BigInt.zero,
       );
+
+      // Get fee
+      final fee = await PaymentApi(paseoProvider).getFee(builder: builder, signerAddress: sr25519Wallet.address);
+      print('Fee: $fee');
 
       // Build payload and sign with sr25519 wallet
       final srPayload = builder.getSigningPayload();
