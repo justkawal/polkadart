@@ -1,59 +1,13 @@
 version: '3.8'
 
 services:
-  # Main test service - runs all tests
-  test:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: polkadart-tests
-    command: run-tests
-    environment:
-      - MELOS_SDK_PATH=/usr/lib/dart
-    # Optionally mount the workspace for development
-    # volumes:
-    #   - .:/workspace
 
-  # CI service - runs full CI pipeline (format, analyze, test)
+  # CI service - runs full CI pipeline (fetch_dependencies, format, analyze, test)
   ci:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: polkadart-ci
-    command: run-ci
-    environment:
-      - MELOS_SDK_PATH=/usr/lib/dart
-
-  # Format check service
-  format:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: polkadart-format
-    command: check-format
-    environment:
-      - MELOS_SDK_PATH=/usr/lib/dart
-
-  # Analyzer service
-  analyze:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: polkadart-analyze
-    command: check-analyze
-    environment:
-      - MELOS_SDK_PATH=/usr/lib/dart
-
-  # Development shell
-  dev:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: polkadart-dev
-    command: /bin/bash
-    stdin_open: true
-    tty: true
-    volumes:
-      - .:/workspace
+    command: sh -c "dart run melos fetch_dependencies && dart run melos run format && dart run melos run analyze && dart run melos run test && dart run melos run test:chain"
     environment:
       - MELOS_SDK_PATH=/usr/lib/dart

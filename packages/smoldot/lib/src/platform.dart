@@ -112,8 +112,11 @@ class SmoldotPlatform {
       }
 
       // Also check in subdirectories for platform-specific builds
-      final platformPath =
-          path.join(searchPath, _getPlatformSubdir(), libraryName);
+      final platformPath = path.join(
+        searchPath,
+        _getPlatformSubdir(),
+        libraryName,
+      );
       if (File(platformPath).existsSync()) {
         return platformPath;
       }

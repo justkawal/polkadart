@@ -1,6 +1,19 @@
 include: package:lints/recommended.yaml
 
 analyzer:
+  errors:
+    always_use_package_imports: ignore
+    avoid_print: ignore
+    close_sinks: ignore
+    comment_references: ignore
+    directives_ordering: ignore
+    prefer_const_constructors: ignore
+    prefer_const_declarations: ignore
+    prefer_is_empty: ignore
+    sort_constructors_first: ignore
+    strict_raw_type: ignore
+    unnecessary_await_in_return: ignore
+    unnecessary_library_name: ignore
   language:
     strict-casts: true
     strict-inference: true

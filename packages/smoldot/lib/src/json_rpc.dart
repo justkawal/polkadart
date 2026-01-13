@@ -67,8 +67,9 @@ class JsonRpcHandler {
     required this.bindings,
     required this.clientHandle,
   }) {
-    _nativeCallable =
-        NativeCallable<DartCallbackNative>.listener(_jsonRpcCallback);
+    _nativeCallable = NativeCallable<DartCallbackNative>.listener(
+      _jsonRpcCallback,
+    );
     _nativeCallback = _nativeCallable.nativeFunction;
   }
 
@@ -117,70 +118,78 @@ class JsonRpcHandler {
     );
 
     // Process response when available
-    completer.future.then((responseJson) {
-      try {
-        final response = jsonDecode(responseJson) as Map<String, dynamic>;
+    completer.future
+        .then((responseJson) {
+          try {
+            final response = jsonDecode(responseJson) as Map<String, dynamic>;
 
-        // Check if this is a subscription notification
-        final method = response['method'] as String?;
-        if (method != null) {
-          // This is a subscription notification
-          _handleSubscriptionNotification(response);
-        } else {
-          // This is a regular response or subscription confirmation
-          final id = response['id']?.toString();
+            // Check if this is a subscription notification
+            final method = response['method'] as String?;
+            if (method != null) {
+              // This is a subscription notification
+              _handleSubscriptionNotification(response);
+            } else {
+              // This is a regular response or subscription confirmation
+              final id = response['id']?.toString();
 
-          if (id != null) {
-            // Check if this is a subscription confirmation
-            if (_pendingSubscriptions.containsKey(id)) {
-              final controller = _pendingSubscriptions.remove(id);
-              final result = response['result'];
+              if (id != null) {
+                // Check if this is a subscription confirmation
+                if (_pendingSubscriptions.containsKey(id)) {
+                  final controller = _pendingSubscriptions.remove(id);
+                  final result = response['result'];
 
-              if (result != null) {
-                // Subscription successful - store the subscription ID
-                final subscriptionId = result.toString();
-                _subscriptions[subscriptionId] = controller!;
-              } else {
-                // Subscription failed
-                final error = response['error'];
-                controller?.addError(JsonRpcException(
-                  'Subscription failed',
-                  error: error != null
-                      ? JsonRpcError.fromJson(error as Map<String, dynamic>)
-                      : null,
-                ));
-                controller?.close();
+                  if (result != null) {
+                    // Subscription successful - store the subscription ID
+                    final subscriptionId = result.toString();
+                    _subscriptions[subscriptionId] = controller!;
+                  } else {
+                    // Subscription failed
+                    final error = response['error'];
+                    controller?.addError(
+                      JsonRpcException(
+                        'Subscription failed',
+                        error: error != null
+                            ? JsonRpcError.fromJson(
+                                error as Map<String, dynamic>,
+                              )
+                            : null,
+                      ),
+                    );
+                    controller?.close();
+                  }
+                } else if (_pendingRequests.containsKey(id)) {
+                  // Regular request response
+                  final requestCompleter = _pendingRequests.remove(id);
+                  requestCompleter?.complete(
+                    JsonRpcResponse.fromJson(response),
+                  );
+                }
               }
-            } else if (_pendingRequests.containsKey(id)) {
-              // Regular request response
-              final requestCompleter = _pendingRequests.remove(id);
-              requestCompleter?.complete(JsonRpcResponse.fromJson(response));
             }
-          }
-        }
 
-        // Continue polling if there are pending requests or active subscriptions
-        if (_pendingRequests.isNotEmpty ||
-            _pendingSubscriptions.isNotEmpty ||
-            _subscriptions.isNotEmpty) {
-          _pollForResponse();
-        }
-      } catch (e) {
-        // JSON decode error - complete all pending with error
-        for (final completer in _pendingRequests.values) {
-          completer.completeError(JsonRpcException(
-            'Failed to decode JSON-RPC response: $e',
-          ));
-        }
-        _pendingRequests.clear();
-      }
-    }).catchError((Object error, StackTrace stackTrace) {
-      // Error getting response - complete all pending with error
-      for (final completer in _pendingRequests.values) {
-        completer.completeError(error, stackTrace);
-      }
-      _pendingRequests.clear();
-    });
+            // Continue polling if there are pending requests or active subscriptions
+            if (_pendingRequests.isNotEmpty ||
+                _pendingSubscriptions.isNotEmpty ||
+                _subscriptions.isNotEmpty) {
+              _pollForResponse();
+            }
+          } catch (e) {
+            // JSON decode error - complete all pending with error
+            for (final completer in _pendingRequests.values) {
+              completer.completeError(
+                JsonRpcException('Failed to decode JSON-RPC response: $e'),
+              );
+            }
+            _pendingRequests.clear();
+          }
+        })
+        .catchError((Object error, StackTrace stackTrace) {
+          // Error getting response - complete all pending with error
+          for (final completer in _pendingRequests.values) {
+            completer.completeError(error, stackTrace);
+          }
+          _pendingRequests.clear();
+        });
   }
 
   /// Handle subscription notification

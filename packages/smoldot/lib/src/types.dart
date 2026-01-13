@@ -23,11 +23,11 @@ class SmoldotConfig {
   });
 
   Map<String, dynamic> toJson() => {
-        'maxLogLevel': maxLogLevel,
-        'maxChains': maxChains,
-        'cpuRateLimit': cpuRateLimit,
-        'wasmCpuMetering': wasmCpuMetering,
-      };
+    'maxLogLevel': maxLogLevel,
+    'maxChains': maxChains,
+    'cpuRateLimit': cpuRateLimit,
+    'wasmCpuMetering': wasmCpuMetering,
+  };
 }
 
 /// Configuration for adding a chain to the smoldot client
@@ -53,12 +53,12 @@ class AddChainConfig {
   });
 
   Map<String, dynamic> toJson() => {
-        'chainSpec': chainSpec,
-        if (databaseContent != null) 'databaseContent': databaseContent,
-        if (potentialRelayChains != null && potentialRelayChains!.isNotEmpty)
-          'potentialRelayChains': potentialRelayChains,
-        'disableJsonRpc': disableJsonRpc,
-      };
+    'chainSpec': chainSpec,
+    if (databaseContent != null) 'databaseContent': databaseContent,
+    if (potentialRelayChains != null && potentialRelayChains!.isNotEmpty)
+      'potentialRelayChains': potentialRelayChains,
+    'disableJsonRpc': disableJsonRpc,
+  };
 }
 
 /// Result of a JSON-RPC request
@@ -73,11 +73,7 @@ class JsonRpcResponse {
   /// Error information if failed
   final JsonRpcError? error;
 
-  const JsonRpcResponse({
-    required this.id,
-    this.result,
-    this.error,
-  });
+  const JsonRpcResponse({required this.id, this.result, this.error});
 
   bool get isError => error != null;
   bool get isSuccess => error == null;
@@ -93,10 +89,10 @@ class JsonRpcResponse {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        if (result != null) 'result': result,
-        if (error != null) 'error': error!.toJson(),
-      };
+    'id': id,
+    if (result != null) 'result': result,
+    if (error != null) 'error': error!.toJson(),
+  };
 }
 
 /// JSON-RPC error information
@@ -111,11 +107,7 @@ class JsonRpcError {
   /// Additional error data
   final dynamic data;
 
-  const JsonRpcError({
-    required this.code,
-    required this.message,
-    this.data,
-  });
+  const JsonRpcError({required this.code, required this.message, this.data});
 
   factory JsonRpcError.fromJson(Map<String, dynamic> json) {
     return JsonRpcError(
@@ -126,10 +118,10 @@ class JsonRpcError {
   }
 
   Map<String, dynamic> toJson() => {
-        'code': code,
-        'message': message,
-        if (data != null) 'data': data,
-      };
+    'code': code,
+    'message': message,
+    if (data != null) 'data': data,
+  };
 
   @override
   String toString() => 'JsonRpcError(code: $code, message: $message)';
@@ -178,13 +170,13 @@ class ChainInfo {
   });
 
   Map<String, dynamic> toJson() => {
-        'chainId': chainId,
-        'name': name,
-        'status': status.name,
-        'peerCount': peerCount,
-        if (bestBlockNumber != null) 'bestBlockNumber': bestBlockNumber,
-        if (bestBlockHash != null) 'bestBlockHash': bestBlockHash,
-      };
+    'chainId': chainId,
+    'name': name,
+    'status': status.name,
+    'peerCount': peerCount,
+    if (bestBlockNumber != null) 'bestBlockNumber': bestBlockNumber,
+    if (bestBlockHash != null) 'bestBlockHash': bestBlockHash,
+  };
 }
 
 /// Log level enumeration
@@ -273,8 +265,12 @@ class SmoldotFfiException extends SmoldotException {
 class ChainException extends SmoldotException {
   final int chainId;
 
-  ChainException(this.chainId, super.message,
-      {super.details, super.stackTrace});
+  ChainException(
+    this.chainId,
+    super.message, {
+    super.details,
+    super.stackTrace,
+  });
 
   @override
   String toString() => 'ChainException[$chainId]: $message';
@@ -284,8 +280,12 @@ class ChainException extends SmoldotException {
 class JsonRpcException extends SmoldotException {
   final JsonRpcError? error;
 
-  JsonRpcException(super.message,
-      {this.error, super.details, super.stackTrace});
+  JsonRpcException(
+    super.message, {
+    this.error,
+    super.details,
+    super.stackTrace,
+  });
 
   @override
   String toString() {
