@@ -590,9 +590,38 @@ Class createPalletQueries(PalletGenerator generator) => Class((classBuilder) {
                     )
                     ..statements.add(Code('if (bytes.isNotEmpty) {'))
                     ..statements.add(
-                      Code(
-                        '  return bytes.first.changes.map((v) => _$storageName.decodeValue(v.key)).toList();',
-                      ),
+                      storage.isNullable
+                          ? Code(
+                              '  return bytes.first.changes.map((v) => v.value != null ? _$storageName.decodeValue(v.value!) : null).toList();',
+                            )
+                          : () {
+                              // Check if we need to cast the default value for Sequence/Array types
+                              typegen.TypeDescriptor actualCodec = storage.valueCodec;
+                              while (actualCodec is typegen.TypeDefBuilder) {
+                                actualCodec = actualCodec.generator;
+                              }
+                              final needsCast =
+                                  (actualCodec is typegen.SequenceDescriptor &&
+                                      actualCodec.typeDef is! typegen.PrimitiveDescriptor) ||
+                                  (actualCodec is typegen.ArrayDescriptor &&
+                                      actualCodec.typeDef is! typegen.PrimitiveDescriptor);
+
+                              final baseDefaultValueExpr = storage.valueCodec.valueFrom(
+                                dirname,
+                                ByteInput(Uint8List.fromList(storage.defaultValue)),
+                              );
+
+                              final Expression defaultValueExpr = needsCast
+                                  ? baseDefaultValueExpr.asA(storage.valueCodec.primitive(dirname))
+                                  : baseDefaultValueExpr;
+
+                              return Block.of([
+                                declareFinal('defaultValue').assign(defaultValueExpr).statement,
+                                Code(
+                                  '  return bytes.first.changes.map((v) => v.value != null ? _$storageName.decodeValue(v.value!) : defaultValue).toList();',
+                                ),
+                              ]);
+                            }(),
                     )
                     ..statements.add(Code('}'))
                     ..statements.add(
