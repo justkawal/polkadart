@@ -20,7 +20,7 @@ workspace:
 
 dev_dependencies:
   coverage: ^1.15.0
-  melos: ^7.3.0
+  melos: ^7.4.0
 
 melos:
   scripts:
