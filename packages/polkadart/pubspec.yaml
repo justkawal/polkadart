@@ -17,7 +17,7 @@ dependencies:
   ss58: ^2.0.0
   equatable: ^2.0.8
   json_serializable: ^6.11.4
-  json_annotation: ^4.9.0
+  json_annotation: ^4.10.0
 
 dev_dependencies:
   polkadart_keyring: ^0.7.2
