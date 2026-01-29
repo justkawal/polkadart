@@ -32,7 +32,8 @@ import 'package:substrate_metadata/metadata/metadata.dart'
         Primitive,
         RuntimeMetadata,
         RuntimeMetadataV14,
-        RuntimeMetadataV15;
+        RuntimeMetadataV15,
+        RuntimeMetadataV16;
 
 part 'hex_extension.dart';
 part 'primitive_extension.dart';

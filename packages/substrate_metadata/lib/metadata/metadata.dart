@@ -61,3 +61,24 @@ part 'v15/runtime/runtime_metadata_v15.dart';
 // V15 -> Extrinsic
 part 'v15/extrinsic_metadata_v15.dart';
 part 'v15/custom_metadata_v15.dart';
+
+//
+// V16 -> Common
+part 'v16/deprecation_info.dart';
+part 'v16/transaction_extension_metadata.dart';
+// V16 -> Pallet
+part 'v16/pallet/pallet_metadata_v16.dart';
+part 'v16/pallet/pallet_call_metadata_v16.dart';
+part 'v16/pallet/pallet_event_metadata_v16.dart';
+part 'v16/pallet/pallet_error_metadata_v16.dart';
+part 'v16/pallet/pallet_constant_metadata_v16.dart';
+part 'v16/pallet/pallet_storage_metadata_v16.dart';
+part 'v16/pallet/pallet_associated_type_metadata.dart';
+part 'v16/pallet/pallet_view_function_metadata.dart';
+// V16 -> Storage
+part 'v16/storage/storage_entry_metadata_v16.dart';
+// V16 -> Runtime
+part 'v16/runtime/runtime_api_metadata_v16.dart';
+part 'v16/runtime/runtime_metadata_v16.dart';
+// V16 -> Extrinsic
+part 'v16/extrinsic_metadata_v16.dart';
