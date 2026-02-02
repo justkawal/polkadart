@@ -13,7 +13,7 @@ dependencies:
   base_x: ^2.0.1 # MIT
   convert: ^3.1.2 # BSD-3-Clause
   cryptography: ^2.9.0 # Apache-2.0
-  json_annotation: ^4.9.0 # BSD-3-Clause
+  json_annotation: ^4.10.0 # BSD-3-Clause
 
 dev_dependencies:
   lints: 6.1.0

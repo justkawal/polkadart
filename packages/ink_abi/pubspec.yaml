@@ -10,7 +10,7 @@ environment:
 
 dependencies:
   equatable: ^2.0.8
-  json_annotation: ^4.9.0
+  json_annotation: ^4.10.0
   json_schema: ^5.2.2
   polkadart: ^1.0.0
   polkadart_scale_codec: ^2.0.0
