@@ -17,5 +17,5 @@ dependencies:
   polkadart_scale_codec: ^2.0.0
 
 dev_dependencies:
-  lints: ^6.0.0
-  test: ^1.28.0
+  lints: 6.1.0
+  test: 1.29.0

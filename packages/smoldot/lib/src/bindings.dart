@@ -7,71 +7,80 @@ typedef ClientHandle = Uint64;
 typedef ChainHandle = Uint64;
 
 // Dart callback type
-typedef DartCallbackNative = Void Function(
-    Int64 callbackId, Int64 result, Pointer<Utf8> error);
-typedef DartCallbackDart = void Function(
-    int callbackId, int result, Pointer<Utf8> error);
+typedef DartCallbackNative =
+    Void Function(Int64 callbackId, Int64 result, Pointer<Utf8> error);
+typedef DartCallbackDart =
+    void Function(int callbackId, int result, Pointer<Utf8> error);
 
 // Native function signatures
-typedef SmoldotClientInitNative = ClientHandle Function(
-    Pointer<Utf8> configJson, Pointer<Pointer<Utf8>> errorOut);
-typedef SmoldotClientInitDart = int Function(
-    Pointer<Utf8> configJson, Pointer<Pointer<Utf8>> errorOut);
+typedef SmoldotClientInitNative =
+    ClientHandle Function(
+      Pointer<Utf8> configJson,
+      Pointer<Pointer<Utf8>> errorOut,
+    );
+typedef SmoldotClientInitDart =
+    int Function(Pointer<Utf8> configJson, Pointer<Pointer<Utf8>> errorOut);
 
-typedef SmoldotAddChainNative = Int32 Function(
-  ClientHandle clientHandle,
-  Pointer<Utf8> chainSpecJson,
-  Pointer<ChainHandle> potentialRelayChains,
-  Int32 relayCount,
-  Pointer<Utf8> databaseContent,
-  Int64 callbackId,
-  Pointer<NativeFunction<DartCallbackNative>> callback,
-  Pointer<Pointer<Utf8>> errorOut,
-);
-typedef SmoldotAddChainDart = int Function(
-  int clientHandle,
-  Pointer<Utf8> chainSpecJson,
-  Pointer<Uint64> potentialRelayChains,
-  int relayCount,
-  Pointer<Utf8> databaseContent,
-  int callbackId,
-  Pointer<NativeFunction<DartCallbackNative>> callback,
-  Pointer<Pointer<Utf8>> errorOut,
-);
+typedef SmoldotAddChainNative =
+    Int32 Function(
+      ClientHandle clientHandle,
+      Pointer<Utf8> chainSpecJson,
+      Pointer<ChainHandle> potentialRelayChains,
+      Int32 relayCount,
+      Pointer<Utf8> databaseContent,
+      Int64 callbackId,
+      Pointer<NativeFunction<DartCallbackNative>> callback,
+      Pointer<Pointer<Utf8>> errorOut,
+    );
+typedef SmoldotAddChainDart =
+    int Function(
+      int clientHandle,
+      Pointer<Utf8> chainSpecJson,
+      Pointer<Uint64> potentialRelayChains,
+      int relayCount,
+      Pointer<Utf8> databaseContent,
+      int callbackId,
+      Pointer<NativeFunction<DartCallbackNative>> callback,
+      Pointer<Pointer<Utf8>> errorOut,
+    );
 
-typedef SmoldotSendJsonRpcNative = Int32 Function(
-  ChainHandle chainHandle,
-  Pointer<Utf8> requestJson,
-  Pointer<Pointer<Utf8>> errorOut,
-);
-typedef SmoldotSendJsonRpcDart = int Function(
-  int chainHandle,
-  Pointer<Utf8> requestJson,
-  Pointer<Pointer<Utf8>> errorOut,
-);
+typedef SmoldotSendJsonRpcNative =
+    Int32 Function(
+      ChainHandle chainHandle,
+      Pointer<Utf8> requestJson,
+      Pointer<Pointer<Utf8>> errorOut,
+    );
+typedef SmoldotSendJsonRpcDart =
+    int Function(
+      int chainHandle,
+      Pointer<Utf8> requestJson,
+      Pointer<Pointer<Utf8>> errorOut,
+    );
 
-typedef SmoldotNextJsonRpcResponseNative = Int32 Function(
-  ChainHandle chainHandle,
-  Int64 callbackId,
-  Pointer<NativeFunction<DartCallbackNative>> callback,
-  Pointer<Pointer<Utf8>> errorOut,
-);
-typedef SmoldotNextJsonRpcResponseDart = int Function(
-  int chainHandle,
-  int callbackId,
-  Pointer<NativeFunction<DartCallbackNative>> callback,
-  Pointer<Pointer<Utf8>> errorOut,
-);
+typedef SmoldotNextJsonRpcResponseNative =
+    Int32 Function(
+      ChainHandle chainHandle,
+      Int64 callbackId,
+      Pointer<NativeFunction<DartCallbackNative>> callback,
+      Pointer<Pointer<Utf8>> errorOut,
+    );
+typedef SmoldotNextJsonRpcResponseDart =
+    int Function(
+      int chainHandle,
+      int callbackId,
+      Pointer<NativeFunction<DartCallbackNative>> callback,
+      Pointer<Pointer<Utf8>> errorOut,
+    );
 
-typedef SmoldotRemoveChainNative = Int32 Function(
-    ChainHandle chainHandle, Pointer<Pointer<Utf8>> errorOut);
-typedef SmoldotRemoveChainDart = int Function(
-    int chainHandle, Pointer<Pointer<Utf8>> errorOut);
+typedef SmoldotRemoveChainNative =
+    Int32 Function(ChainHandle chainHandle, Pointer<Pointer<Utf8>> errorOut);
+typedef SmoldotRemoveChainDart =
+    int Function(int chainHandle, Pointer<Pointer<Utf8>> errorOut);
 
-typedef SmoldotClientDestroyNative = Int32 Function(
-    ClientHandle clientHandle, Pointer<Pointer<Utf8>> errorOut);
-typedef SmoldotClientDestroyDart = int Function(
-    int clientHandle, Pointer<Pointer<Utf8>> errorOut);
+typedef SmoldotClientDestroyNative =
+    Int32 Function(ClientHandle clientHandle, Pointer<Pointer<Utf8>> errorOut);
+typedef SmoldotClientDestroyDart =
+    int Function(int clientHandle, Pointer<Pointer<Utf8>> errorOut);
 
 typedef SmoldotFreeStringNative = Void Function(Pointer<Utf8> ptr);
 typedef SmoldotFreeStringDart = void Function(Pointer<Utf8> ptr);
@@ -103,27 +112,39 @@ class SmoldotBindings {
 
   /// Initialize function pointers from the library
   void _initializeBindings() {
-    _clientInit =
-        _library.lookupFunction<SmoldotClientInitNative, SmoldotClientInitDart>(
-            'smoldot_client_init');
-    _addChain =
-        _library.lookupFunction<SmoldotAddChainNative, SmoldotAddChainDart>(
-            'smoldot_add_chain');
-    _sendJsonRpc = _library.lookupFunction<SmoldotSendJsonRpcNative,
-        SmoldotSendJsonRpcDart>('smoldot_send_json_rpc');
-    _nextJsonRpcResponse = _library.lookupFunction<
-        SmoldotNextJsonRpcResponseNative,
-        SmoldotNextJsonRpcResponseDart>('smoldot_next_json_rpc_response');
-    _removeChain = _library.lookupFunction<SmoldotRemoveChainNative,
-        SmoldotRemoveChainDart>('smoldot_remove_chain');
-    _clientDestroy = _library.lookupFunction<SmoldotClientDestroyNative,
-        SmoldotClientDestroyDart>('smoldot_client_destroy');
-    _freeString =
-        _library.lookupFunction<SmoldotFreeStringNative, SmoldotFreeStringDart>(
-            'smoldot_free_string');
-    _version =
-        _library.lookupFunction<SmoldotVersionNative, SmoldotVersionDart>(
-            'smoldot_version');
+    _clientInit = _library
+        .lookupFunction<SmoldotClientInitNative, SmoldotClientInitDart>(
+          'smoldot_client_init',
+        );
+    _addChain = _library
+        .lookupFunction<SmoldotAddChainNative, SmoldotAddChainDart>(
+          'smoldot_add_chain',
+        );
+    _sendJsonRpc = _library
+        .lookupFunction<SmoldotSendJsonRpcNative, SmoldotSendJsonRpcDart>(
+          'smoldot_send_json_rpc',
+        );
+    _nextJsonRpcResponse = _library
+        .lookupFunction<
+          SmoldotNextJsonRpcResponseNative,
+          SmoldotNextJsonRpcResponseDart
+        >('smoldot_next_json_rpc_response');
+    _removeChain = _library
+        .lookupFunction<SmoldotRemoveChainNative, SmoldotRemoveChainDart>(
+          'smoldot_remove_chain',
+        );
+    _clientDestroy = _library
+        .lookupFunction<SmoldotClientDestroyNative, SmoldotClientDestroyDart>(
+          'smoldot_client_destroy',
+        );
+    _freeString = _library
+        .lookupFunction<SmoldotFreeStringNative, SmoldotFreeStringDart>(
+          'smoldot_free_string',
+        );
+    _version = _library
+        .lookupFunction<SmoldotVersionNative, SmoldotVersionDart>(
+          'smoldot_version',
+        );
   }
 
   // ===== Core Client Functions =====
@@ -312,7 +333,8 @@ class SmoldotBindings {
 
       if (result != 0) {
         throw Exception(
-            'Failed to get next JSON-RPC response: error code $result');
+          'Failed to get next JSON-RPC response: error code $result',
+        );
       }
     } finally {
       _allocator.free(errorOutPtr);

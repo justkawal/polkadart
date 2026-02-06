@@ -89,10 +89,7 @@ void main() {
     });
 
     test('parses from JSON', () {
-      final json = {
-        'id': '1',
-        'result': 'test-result',
-      };
+      final json = {'id': '1', 'result': 'test-result'};
       final response = JsonRpcResponse.fromJson(json);
       expect(response.id, equals('1'));
       expect(response.result, equals('test-result'));
@@ -102,10 +99,7 @@ void main() {
     test('parses error from JSON', () {
       final json = {
         'id': '1',
-        'error': {
-          'code': 123,
-          'message': 'test error',
-        },
+        'error': {'code': 123, 'message': 'test error'},
       };
       final response = JsonRpcResponse.fromJson(json);
       expect(response.id, equals('1'));
@@ -136,8 +130,10 @@ void main() {
 
     test('formats toString', () {
       const error = JsonRpcError(code: 123, message: 'test error');
-      expect(error.toString(),
-          equals('JsonRpcError(code: 123, message: test error)'));
+      expect(
+        error.toString(),
+        equals('JsonRpcError(code: 123, message: test error)'),
+      );
     });
   });
 

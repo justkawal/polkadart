@@ -24,10 +24,7 @@ Future<void> basicExample() async {
 
   // Create and initialize the client
   final client = SmoldotClient(
-    config: SmoldotConfig(
-      maxLogLevel: 3,
-      maxChains: 8,
-    ),
+    config: SmoldotConfig(maxLogLevel: 3, maxChains: 8),
   );
 
   try {
@@ -40,7 +37,8 @@ Future<void> basicExample() async {
     if (!chainSpecFile.existsSync()) {
       print('⚠ Westend chain spec not found at test/fixtures/westend.json');
       print(
-          '  Download it with: curl -o test/fixtures/westend.json https://raw.githubusercontent.com/smol-dot/smoldot/main/demo-chain-specs/westend.json');
+        '  Download it with: curl -o test/fixtures/westend.json https://raw.githubusercontent.com/smol-dot/smoldot/main/demo-chain-specs/westend.json',
+      );
       return;
     }
 
@@ -48,9 +46,7 @@ Future<void> basicExample() async {
     final chainSpec = await chainSpecFile.readAsString();
 
     print('Adding Westend chain...');
-    final chain = await client.addChain(
-      AddChainConfig(chainSpec: chainSpec),
-    );
+    final chain = await client.addChain(AddChainConfig(chainSpec: chainSpec));
     print('✓ Chain added with ID: ${chain.chainId}');
     print('✓ Westend chain successfully initialized');
 
@@ -88,7 +84,8 @@ Future<void> multiChainExample() async {
       print('⚠ Polkadot chain spec not found');
       print('  This example requires both Polkadot and Statemint chain specs');
       print(
-          '  Download them from: https://github.com/smol-dot/smoldot/tree/main/demo-chain-specs');
+        '  Download them from: https://github.com/smol-dot/smoldot/tree/main/demo-chain-specs',
+      );
       return;
     }
 
@@ -136,9 +133,7 @@ Future<void> subscriptionExample() async {
     }
 
     final chainSpec = await chainSpecFile.readAsString();
-    final chain = await client.addChain(
-      AddChainConfig(chainSpec: chainSpec),
-    );
+    final chain = await client.addChain(AddChainConfig(chainSpec: chainSpec));
     print('✓ Chain added');
 
     print('\nSubscribing to new block headers...');
@@ -187,9 +182,7 @@ Future<void> jsonRpcExample() async {
     }
 
     final chainSpec = await chainSpecFile.readAsString();
-    final chain = await client.addChain(
-      AddChainConfig(chainSpec: chainSpec),
-    );
+    final chain = await client.addChain(AddChainConfig(chainSpec: chainSpec));
     print('✓ Chain added');
 
     print('\nMaking JSON-RPC requests...');
@@ -229,9 +222,7 @@ Future<void> chainInfoExample() async {
     }
 
     final chainSpec = await chainSpecFile.readAsString();
-    final chain = await client.addChain(
-      AddChainConfig(chainSpec: chainSpec),
-    );
+    final chain = await client.addChain(AddChainConfig(chainSpec: chainSpec));
     print('✓ Chain added');
 
     print('\nGetting chain information...');
@@ -288,9 +279,7 @@ Future<void> concurrentRequestsExample() async {
     }
 
     final chainSpec = await chainSpecFile.readAsString();
-    final chain = await client.addChain(
-      AddChainConfig(chainSpec: chainSpec),
-    );
+    final chain = await client.addChain(AddChainConfig(chainSpec: chainSpec));
     print('✓ Chain added');
 
     print('\nMaking 4 concurrent JSON-RPC requests...');

@@ -9,25 +9,20 @@ void main() {
     late Chain chain;
 
     setUpAll(() async {
-      client = SmoldotClient(
-        config: SmoldotConfig(
-          maxLogLevel: 3,
-        ),
-      );
+      client = SmoldotClient(config: SmoldotConfig(maxLogLevel: 3));
       await client.initialize();
 
       // Load Westend chain spec
       final westendSpecFile = File('test/fixtures/westend.json');
-      expect(westendSpecFile.existsSync(), isTrue,
-          reason:
-              'Westend chain spec not found. Run: curl -o test/fixtures/westend.json https://raw.githubusercontent.com/smol-dot/smoldot/main/demo-chain-specs/westend.json');
+      expect(
+        westendSpecFile.existsSync(),
+        isTrue,
+        reason:
+            'Westend chain spec not found. Run: curl -o test/fixtures/westend.json https://raw.githubusercontent.com/smol-dot/smoldot/main/demo-chain-specs/westend.json',
+      );
 
       final westendSpec = await westendSpecFile.readAsString();
-      chain = await client.addChain(
-        AddChainConfig(
-          chainSpec: westendSpec,
-        ),
-      );
+      chain = await client.addChain(AddChainConfig(chainSpec: westendSpec));
     });
 
     tearDownAll(() async {
@@ -129,31 +124,27 @@ void main() {
       StreamSubscription? subscription1;
       StreamSubscription? subscription2;
 
-      subscription1 = sub1.listen(
-        (response) {
-          blocks1.add(response);
-          if (blocks1.length >= 1) {
-            subscription1?.cancel();
-            subscriptionsComplete++;
-            if (subscriptionsComplete == 2) {
-              completer.complete();
-            }
+      subscription1 = sub1.listen((response) {
+        blocks1.add(response);
+        if (blocks1.length >= 1) {
+          subscription1?.cancel();
+          subscriptionsComplete++;
+          if (subscriptionsComplete == 2) {
+            completer.complete();
           }
-        },
-      );
+        }
+      });
 
-      subscription2 = sub2.listen(
-        (response) {
-          blocks2.add(response);
-          if (blocks2.length >= 1) {
-            subscription2?.cancel();
-            subscriptionsComplete++;
-            if (subscriptionsComplete == 2) {
-              completer.complete();
-            }
+      subscription2 = sub2.listen((response) {
+        blocks2.add(response);
+        if (blocks2.length >= 1) {
+          subscription2?.cancel();
+          subscriptionsComplete++;
+          if (subscriptionsComplete == 2) {
+            completer.complete();
           }
-        },
-      );
+        }
+      });
 
       // Wait for both subscriptions to get at least one notification
       await completer.future.timeout(
@@ -165,7 +156,8 @@ void main() {
       );
 
       print(
-          'Subscription 1 received ${blocks1.length} blocks, Subscription 2 received ${blocks2.length} blocks');
+        'Subscription 1 received ${blocks1.length} blocks, Subscription 2 received ${blocks2.length} blocks',
+      );
       expect(blocks1.isNotEmpty || blocks2.isNotEmpty, isTrue);
     });
   });

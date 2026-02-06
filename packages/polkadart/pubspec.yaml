@@ -15,12 +15,12 @@ dependencies:
   polkadart_scale_codec: ^2.0.0 # Apache 2.0
   substrate_metadata: ^2.0.0 # Apache 2.0
   ss58: ^2.0.0
-  equatable: ^2.0.7
-  json_serializable: ^6.11.3
-  json_annotation: ^4.9.0
+  equatable: ^2.0.8
+  json_serializable: ^6.11.4
+  json_annotation: ^4.10.0
 
 dev_dependencies:
   polkadart_keyring: ^0.7.2
   build_runner: ^2.10.4
-  lints: ^6.0.0
-  test: ^1.28.0
+  lints: 6.1.0
+  test: 1.29.0
