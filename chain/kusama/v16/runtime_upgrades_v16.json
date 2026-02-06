@@ -1,0 +1,20 @@
+[
+  {
+    "spec_version": 1007001,
+    "block_number": 29968667,
+    "block_hash": "0x265d33a158cd024517b3edb9fcf201688d32fc9a4e6d58af500fbac7bb2329da",
+    "metadata_version": 16
+  },
+  {
+    "spec_version": 1009001,
+    "block_number": 30406234,
+    "block_hash": "0x2c4fce6af5d9a276da7f316698d58edd0021daf58b27666710d309b783947f38",
+    "metadata_version": 16
+  },
+  {
+    "spec_version": 1009002,
+    "block_number": 30568206,
+    "block_hash": "0x46f77398cd7e9c536e62a3f41cf5914382328faf1f2ba15644891f1b67e16b43",
+    "metadata_version": 16
+  }
+]
