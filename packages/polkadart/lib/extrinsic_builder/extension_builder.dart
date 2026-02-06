@@ -1,5 +1,84 @@
 part of extrinsic_builder;
 
+/// Unified extension info that normalizes V14/V15 SignedExtensionMetadata
+/// and V16 TransactionExtensionMetadata into a common type.
+///
+/// - For V14/V15: `type` is the extension data type, `additionalSigned` is the
+///   additional data type from [SignedExtensionMetadata].
+/// - For V16: `type` is the extension data type, `additionalSigned` maps to the
+///   `implicit` field from [TransactionExtensionMetadata].
+class UnifiedExtensionMetadata {
+  final String identifier;
+  final int type;
+  final int additionalSigned;
+
+  const UnifiedExtensionMetadata({
+    required this.identifier,
+    required this.type,
+    required this.additionalSigned,
+  });
+
+  /// Create from V14/V15 SignedExtensionMetadata
+  factory UnifiedExtensionMetadata.fromSigned(SignedExtensionMetadata ext) {
+    return UnifiedExtensionMetadata(
+      identifier: ext.identifier,
+      type: ext.type,
+      additionalSigned: ext.additionalSigned,
+    );
+  }
+
+  /// Create from V16 TransactionExtensionMetadata
+  factory UnifiedExtensionMetadata.fromTransaction(TransactionExtensionMetadata ext) {
+    return UnifiedExtensionMetadata(
+      identifier: ext.identifier,
+      type: ext.type,
+      additionalSigned: ext.implicit,
+    );
+  }
+}
+
+/// Get the unified list of extensions from chain metadata.
+///
+/// For V14/V15, wraps SignedExtensionMetadata.
+/// For V16, wraps TransactionExtensionMetadata using the primary version's extensions.
+List<UnifiedExtensionMetadata> _getUnifiedExtensions(ChainInfo chainInfo) {
+  final ExtrinsicMetadata extrinsic = chainInfo.registry.extrinsic;
+
+  if (extrinsic is ExtrinsicMetadataV16) {
+    // V16: Use transaction extensions for the highest supported version
+    final int targetVersion = extrinsic.versions.isNotEmpty
+        ? extrinsic.versions.reduce((a, b) => a > b ? a : b)
+        : 0;
+    final txExtensions = extrinsic.extensionsForVersion(targetVersion);
+    return txExtensions
+        .map((ext) => UnifiedExtensionMetadata.fromTransaction(ext))
+        .toList(growable: false);
+  } else {
+    // V14/V15: Use signed extensions
+    return extrinsic.signedExtensions
+        .map((ext) => UnifiedExtensionMetadata.fromSigned(ext))
+        .toList(growable: false);
+  }
+}
+
+/// Detect the extrinsic version to use based on metadata.
+///
+/// For V16 metadata with versions containing 5, returns 5.
+/// Otherwise returns 4.
+int _detectExtrinsicVersion(ChainInfo chainInfo) {
+  final ExtrinsicMetadata extrinsic = chainInfo.registry.extrinsic;
+
+  if (extrinsic is ExtrinsicMetadataV16) {
+    // Prefer the highest supported version
+    if (extrinsic.versions.contains(5)) return 5;
+    if (extrinsic.versions.contains(4)) return 4;
+    return extrinsic.versions.isNotEmpty ? extrinsic.versions.reduce((a, b) => a > b ? a : b) : 4;
+  }
+
+  // V14/V15 always use version 4
+  return 4;
+}
+
 /// Builder for managing signed extension values and additional signed data.
 ///
 /// This class handles the construction and management of signed extensions that are
@@ -186,8 +265,8 @@ class ExtensionBuilder {
     extensions.clear();
     additionalSigned.clear();
 
-    // Go through each extension in metadata
-    for (final SignedExtensionMetadata ext in chainInfo.registry.signedExtensions) {
+    // Go through each extension in metadata (unified across V14/V15/V16)
+    for (final UnifiedExtensionMetadata ext in _getUnifiedExtensions(chainInfo)) {
       final String identifier = ext.identifier;
 
       // Check if we should skip this extension entirely
@@ -508,11 +587,11 @@ class ExtensionBuilder {
   /// are zero-sized (have no data to encode).
   ///
   /// Parameters:
-  /// - [ext]: The extension metadata to check
+  /// - [ext]: The unified extension metadata to check
   ///
   /// Returns:
   /// `true` if the extension should be skipped, `false` otherwise.
-  bool _shouldSkipExtension(SignedExtensionMetadata ext) {
+  bool _shouldSkipExtension(UnifiedExtensionMetadata ext) {
     final valueCodec = chainInfo.registry.codecFor(ext.type);
     final additionalCodec = chainInfo.registry.codecFor(ext.additionalSigned);
 
@@ -521,7 +600,9 @@ class ExtensionBuilder {
         (additionalCodec is NullCodec || additionalCodec.isSizeZero());
   }
 
-  /// Checks if the chain supports a specific signed extension.
+  /// Checks if the chain supports a specific extension.
+  ///
+  /// Works with both V14/V15 signed extensions and V16 transaction extensions.
   ///
   /// Parameters:
   /// - [identifier]: The extension identifier (e.g., 'CheckNonce')
@@ -529,7 +610,7 @@ class ExtensionBuilder {
   /// Returns:
   /// `true` if the extension is defined in the chain metadata, `false` otherwise.
   bool _hasExtension(String identifier) {
-    return chainInfo.registry.signedExtensions.any((ext) => ext.identifier == identifier);
+    return _getUnifiedExtensions(chainInfo).any((ext) => ext.identifier == identifier);
   }
 
   /// Validates that all required extension values are set.
@@ -551,7 +632,7 @@ class ExtensionBuilder {
   void validate() {
     final missing = <String>[];
 
-    for (final ext in chainInfo.registry.signedExtensions) {
+    for (final ext in _getUnifiedExtensions(chainInfo)) {
       final valueCodec = chainInfo.registry.codecFor(ext.type);
       final additionalCodec = chainInfo.registry.codecFor(ext.additionalSigned);
 

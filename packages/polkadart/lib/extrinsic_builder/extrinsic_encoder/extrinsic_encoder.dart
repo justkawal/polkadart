@@ -5,15 +5,22 @@ part of extrinsic_builder;
 /// This class takes signed data and encodes it into the final extrinsic format
 /// that can be submitted to the chain. It handles version bytes, MultiAddress,
 /// MultiSignature, extensions, and the compact length prefix.
+///
+/// Supports both extrinsic format V4 and V5:
+/// - V4: Traditional signed (0x84) / unsigned (0x04) model
+/// - V5: New bare (0x05) / signed (0x85) / general (0x45) model
 class ExtrinsicEncoder {
   final ChainInfo chainInfo;
 
-  /// Version bit flags
-  static const int _EXTRINSIC_VERSION = 4; // Current version
-  static const int _SIGNED_MASK = 0x80; // Bit 7: 1 = signed, 0 = unsigned
-  static const int _VERSION_MASK = 0x7F; // Bits 0-6: version
+  /// Version bit flags (matching the decoder in UncheckedExtrinsicCodec)
+  static const int _SIGNED_MASK = 0x80; // Bit 7: signed flag
+  static const int _GENERAL_BIT = 0x40; // Bit 6: general flag (v5 only)
+  static const int _VERSION_MASK = 0x3F; // Lower 6 bits: version number
 
-  ExtrinsicEncoder(this.chainInfo);
+  /// The detected extrinsic version based on metadata
+  late final int _EXTRINSIC_VERSION;
+
+  ExtrinsicEncoder(this.chainInfo) : _EXTRINSIC_VERSION = _detectExtrinsicVersion(chainInfo);
 
   /// Encode a signed extrinsic ready for submission
   ///
@@ -59,7 +66,7 @@ class ExtrinsicEncoder {
   Uint8List _encodeExtrinsicWithoutPrefix(SignedData signedData) {
     final output = ByteOutput();
 
-    // 1. Version byte (0x84 for signed V4)
+    // 1. Version byte (0x84 for signed V4, 0x85 for signed V5)
     final versionByte = _SIGNED_MASK | (_EXTRINSIC_VERSION & _VERSION_MASK);
     output.pushByte(versionByte);
 
@@ -136,7 +143,7 @@ class ExtrinsicEncoder {
   /// Encode extension values in metadata order
   void _encodeExtensions(Map<String, dynamic> extensions, Output output) {
     // Extensions must be encoded in the exact order specified in metadata
-    for (final ext in chainInfo.registry.signedExtensions) {
+    for (final ext in _getUnifiedExtensions(chainInfo)) {
       final codec = chainInfo.registry.codecFor(ext.type);
 
       // Skip zero-sized extensions
@@ -178,15 +185,17 @@ class ExtrinsicEncoder {
     }
   }
 
-  /// Create an unsigned extrinsic (for inherents or unsigned transactions)
+  /// Create a bare/unsigned extrinsic (for inherents or unsigned transactions)
+  ///
+  /// V4: version byte 0x04, V5: version byte 0x05
   Uint8List encodeUnsigned(Uint8List callData) {
     final output = ByteOutput();
 
-    // Version byte (0x04 for unsigned V4)
+    // Version byte (0x04 for bare V4, 0x05 for bare V5)
     final versionByte = _EXTRINSIC_VERSION & _VERSION_MASK;
     output.pushByte(versionByte);
 
-    // Just the call data for unsigned
+    // Just the call data for bare/unsigned
     output.write(callData);
 
     // Add compact length prefix
@@ -197,6 +206,57 @@ class ExtrinsicEncoder {
 
     return finalOutput.toBytes();
   }
+
+  /// Create a general extrinsic (V5 only)
+  ///
+  /// General extrinsics (0x45) include extension data but no signature.
+  /// This is the new V5 paradigm for transactions that carry extensions
+  /// without being signed by a specific account.
+  ///
+  /// Parameters:
+  /// - [callData]: The SCALE-encoded call data
+  /// - [extensions]: The extension values map
+  /// - [extensionVersion]: The extension version byte (default: 0)
+  ///
+  /// Throws [EncodingError] if the detected extrinsic version is not 5.
+  Uint8List encodeGeneral({
+    required Uint8List callData,
+    required Map<String, dynamic> extensions,
+    int extensionVersion = 0,
+  }) {
+    if (_EXTRINSIC_VERSION != 5) {
+      throw EncodingError(
+        'General extrinsics are only supported in V5, '
+        'but detected extrinsic version is $_EXTRINSIC_VERSION',
+      );
+    }
+
+    final output = ByteOutput();
+
+    // 1. Version byte (0x45 for general V5)
+    final versionByte = _GENERAL_BIT | (_EXTRINSIC_VERSION & _VERSION_MASK);
+    output.pushByte(versionByte);
+
+    // 2. Extension version byte
+    output.pushByte(extensionVersion);
+
+    // 3. Encode extension values
+    _encodeExtensions(extensions, output);
+
+    // 4. Encode call data
+    output.write(callData);
+
+    // Add compact length prefix
+    final extrinsicBytes = output.toBytes();
+    final finalOutput = ByteOutput();
+    CompactCodec.codec.encodeTo(extrinsicBytes.length, finalOutput);
+    finalOutput.write(extrinsicBytes);
+
+    return finalOutput.toBytes();
+  }
+
+  /// Get the detected extrinsic version
+  int get extrinsicVersion => _EXTRINSIC_VERSION;
 
   /// Get information about the encoded extrinsic
   EncodedExtrinsicInfo getExtrinsicInfo(SignedData signedData) {

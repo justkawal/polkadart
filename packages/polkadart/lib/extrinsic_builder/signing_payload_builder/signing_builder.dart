@@ -58,7 +58,7 @@ class SigningBuilder {
     output.write(callData);
 
     // 2. Add extension values (in metadata order, skip zero-sized)
-    for (final ext in chainInfo.registry.signedExtensions) {
+    for (final ext in _getUnifiedExtensions(chainInfo)) {
       final codec = chainInfo.registry.codecFor(ext.type);
 
       // Skip zero-sized extensions for efficiency
@@ -99,7 +99,7 @@ class SigningBuilder {
     }
 
     // 3. Add additional signed data (in metadata order, skip zero-sized)
-    for (final ext in chainInfo.registry.signedExtensions) {
+    for (final ext in _getUnifiedExtensions(chainInfo)) {
       final codec = chainInfo.registry.codecFor(ext.additionalSigned);
 
       // Skip zero-sized for efficiency
@@ -154,7 +154,7 @@ class SigningBuilder {
     int extensionCount = 0;
     int additionalCount = 0;
 
-    for (final ext in chainInfo.registry.signedExtensions) {
+    for (final ext in _getUnifiedExtensions(chainInfo)) {
       final valueCodec = chainInfo.registry.codecFor(ext.type);
       final additionalCodec = chainInfo.registry.codecFor(ext.additionalSigned);
 
