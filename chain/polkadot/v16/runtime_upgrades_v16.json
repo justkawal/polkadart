@@ -1,20 +1,3 @@
-[
-  {
-    "spec_version": 1007001,
-    "block_number": 27994522,
-    "block_hash": "0x4e902ec59f85787288b66cdcbc5c5340d11d8d79fd995753d02cd9e0be1a22f8",
-    "metadata_version": 16
-  },
-  {
-    "spec_version": 2000000,
-    "block_number": 28476903,
-    "block_hash": "0x162de2344b94d67a9b05197c38b156f63cc7f5bb49257b71fb23ff9e95206a45",
-    "metadata_version": 16
-  },
-  {
-    "spec_version": 2000001,
-    "block_number": 28524511,
-    "block_hash": "0x78d8524b8a06f0037d72058042253caf8eb3949ce06a2fd85db4506d3963f398",
-    "metadata_version": 16
-  }
-]
+version https://git-lfs.github.com/spec/v1
+oid sha256:033ba553301276d369add3e0c209e00ef7e7f431e94b65536f23a1da43e07768
+size 551
