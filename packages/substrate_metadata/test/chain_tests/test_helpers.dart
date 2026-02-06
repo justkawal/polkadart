@@ -4,6 +4,43 @@ import 'dart:io';
 import 'package:polkadart_scale_codec/polkadart_scale_codec.dart';
 import 'package:substrate_metadata/substrate_metadata.dart';
 
+/// Finds the monorepo root directory by looking for the 'chain' directory.
+/// This allows tests to work both when run from:
+/// - The monorepo root (via `melos test:chain` or `dart test packages/...`)
+/// - The package directory (via `dart test` from packages/substrate_metadata)
+String _findMonorepoRoot() {
+  var current = Directory.current;
+
+  // Walk up the directory tree looking for the 'chain' directory
+  while (current.path != current.parent.path) {
+    final chainDir = Directory('${current.path}/chain');
+    if (chainDir.existsSync()) {
+      return current.path;
+    }
+    current = current.parent;
+  }
+
+  throw StateError(
+    'Could not find monorepo root (directory containing "chain" folder). '
+    'Current directory: ${Directory.current.path}',
+  );
+}
+
+/// Cached monorepo root path
+String? _cachedMonorepoRoot;
+
+/// Returns the path to the chain directory, works from any location in the monorepo.
+String get chainBasePath {
+  _cachedMonorepoRoot ??= _findMonorepoRoot();
+  return '$_cachedMonorepoRoot/chain';
+}
+
+/// Resolves a chain-relative path to an absolute path.
+/// Example: chainPath('polkadot/v14/events.jsonl') -> '/path/to/monorepo/chain/polkadot/v14/events.jsonl'
+String chainPath(String relativePath) {
+  return '$chainBasePath/$relativePath';
+}
+
 /// Helper class to cache metadata and codecs
 class MetadataInfo {
   final RuntimeMetadataPrefixed prefixedMetadata;
@@ -132,51 +169,6 @@ MetadataInfo getOrLoadMetadata(int specVersion, String metadataDir, String cache
   cache[specVersion] = metadataInfo;
 
   return metadataInfo;
-}
-
-/// Check if any extrinsic in the list has version 5
-/// TODO: Remove this once extrinsic v5 is supported in the codebase
-/// See: unchecked_extrinsic_codec.dart - needs to support version 5
-bool hasExtrinsicVersion5(List<String> extrinsicsHexList) {
-  for (final extHex in extrinsicsHexList) {
-    // Remove 0x prefix
-    final hex = extHex.startsWith('0x') ? extHex.substring(2) : extHex;
-    if (hex.isEmpty) continue;
-
-    // First bytes are compact-encoded length, then version byte
-    // Compact encoding: if first byte & 0x03 == 0, length is byte >> 2
-    // We need to skip the length prefix to get to the version byte
-    final firstByte = int.parse(hex.substring(0, 2), radix: 16);
-    final mode = firstByte & 0x03;
-
-    int versionByteOffset;
-    if (mode == 0) {
-      // Single byte mode
-      versionByteOffset = 2; // 1 byte = 2 hex chars
-    } else if (mode == 1) {
-      // Two byte mode
-      versionByteOffset = 4; // 2 bytes = 4 hex chars
-    } else if (mode == 2) {
-      // Four byte mode
-      versionByteOffset = 8; // 4 bytes = 8 hex chars
-    } else {
-      // Big integer mode - skip for now
-      continue;
-    }
-
-    if (hex.length < versionByteOffset + 2) continue;
-
-    final versionByte = int.parse(
-      hex.substring(versionByteOffset, versionByteOffset + 2),
-      radix: 16,
-    );
-    final version = versionByte & 0x7F; // Mask out the signed bit
-
-    if (version == 5) {
-      return true;
-    }
-  }
-  return false;
 }
 
 /// Encode extrinsics list as SCALE Vec<Extrinsic>

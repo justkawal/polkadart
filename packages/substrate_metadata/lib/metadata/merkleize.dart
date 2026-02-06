@@ -522,16 +522,37 @@ class MetadataMerkleizer {
       addressTy: getTypeRef(definitions, accessibleTypes, metadata.extrinsic.addressType),
       callTy: getTypeRef(definitions, accessibleTypes, metadata.extrinsic.callType),
       signatureTy: getTypeRef(definitions, accessibleTypes, metadata.extrinsic.signatureType),
-      signedExtensions: metadata.extrinsic.signedExtensions
+      signedExtensions: _getExtensionsInfo(metadata.extrinsic, definitions, accessibleTypes),
+    );
+  }
+
+  /// Get extensions info handling V14/V15 signedExtensions vs V16 transactionExtensions
+  List<({String identifier, TypeRef includedInExtrinsic, TypeRef includedInSignedData})>
+  _getExtensionsInfo(
+    ExtrinsicMetadata ext,
+    Map<int, LookupValue> definitions,
+    Map<int, int> accessibleTypes,
+  ) {
+    if (ext is ExtrinsicMetadataV16) {
+      return ext.transactionExtensions
           .map(
-            (se) => (
-              identifier: se.identifier,
-              includedInExtrinsic: getTypeRef(definitions, accessibleTypes, se.type),
-              includedInSignedData: getTypeRef(definitions, accessibleTypes, se.additionalSigned),
+            (te) => (
+              identifier: te.identifier,
+              includedInExtrinsic: getTypeRef(definitions, accessibleTypes, te.type),
+              includedInSignedData: getTypeRef(definitions, accessibleTypes, te.implicit),
             ),
           )
-          .toList(),
-    );
+          .toList();
+    }
+    return ext.signedExtensions
+        .map(
+          (se) => (
+            identifier: se.identifier,
+            includedInExtrinsic: getTypeRef(definitions, accessibleTypes, se.type),
+            includedInSignedData: getTypeRef(definitions, accessibleTypes, se.additionalSigned),
+          ),
+        )
+        .toList();
   }
 
   int getBitSequenceBytes(String primitive) {
@@ -764,13 +785,23 @@ class MetadataMerkleizer {
       }
     }
 
-    collectTypesFromId(metadata.extrinsic.callType);
-    collectTypesFromId(metadata.extrinsic.addressType);
-    collectTypesFromId(metadata.extrinsic.signatureType);
+    final extr = metadata.extrinsic;
+    collectTypesFromId(extr.callType);
+    collectTypesFromId(extr.addressType);
+    collectTypesFromId(extr.signatureType);
 
-    for (var ext in metadata.extrinsic.signedExtensions) {
-      collectTypesFromId(ext.type);
-      collectTypesFromId(ext.additionalSigned);
+    // Handle V16 (uses transactionExtensions instead of signedExtensions)
+    if (extr is ExtrinsicMetadataV16) {
+      for (var te in extr.transactionExtensions) {
+        collectTypesFromId(te.type);
+        collectTypesFromId(te.implicit);
+      }
+    } else {
+      // V14/V15 use signedExtensions
+      for (var se in extr.signedExtensions) {
+        collectTypesFromId(se.type);
+        collectTypesFromId(se.additionalSigned);
+      }
     }
 
     final List<int> sorted = types.toList()..sort();

@@ -55,9 +55,9 @@ class MetadataTypeRegistry {
     }
 
     // Check supported version
-    if (version != 14 && version != 15) {
+    if (version != 14 && version != 15 && version != 16) {
       throw MetadataException(
-        'Unsupported metadata version: $version. Only V14 and V15 are supported.',
+        'Unsupported metadata version: $version. Only V14, V15, and V16 are supported.',
       );
     }
 
@@ -71,6 +71,7 @@ class MetadataTypeRegistry {
     return switch (prefixed.metadata) {
       RuntimeMetadataV14(:final types) => PortableRegistry(types),
       RuntimeMetadataV15(:final types) => PortableRegistry(types),
+      RuntimeMetadataV16(:final types) => PortableRegistry(types),
     };
   }
 
@@ -82,6 +83,7 @@ class MetadataTypeRegistry {
     final pallets = switch (prefixed.metadata) {
       RuntimeMetadataV14(:final pallets) => pallets,
       RuntimeMetadataV15(:final pallets) => pallets,
+      RuntimeMetadataV16(:final pallets) => pallets,
     };
 
     for (final pallet in pallets) {
@@ -568,6 +570,7 @@ class MetadataTypeRegistry {
     return switch (prefixed.metadata) {
       RuntimeMetadataV14(:final extrinsic) => extrinsic,
       RuntimeMetadataV15(:final extrinsic) => extrinsic,
+      RuntimeMetadataV16(:final extrinsic) => extrinsic,
     };
   }
 
@@ -580,19 +583,39 @@ class MetadataTypeRegistry {
   /// Runtime call type from extrinsic metadata
   int get callType => extrinsic.callType;
 
-  /// Extra/Extension type from extrinsic metadata
+  /// Extra/Extension type from extrinsic metadata (V14/V15 only)
+  ///
+  /// Returns -1 for V16 as it uses transaction extensions instead.
   int get extraType => extrinsic.extraType;
 
   /// Get signed extensions
+  ///
+  /// For V16, returns empty list. Use [transactionExtensions] for V16.
   List<SignedExtensionMetadata> get signedExtensions => extrinsic.signedExtensions;
+
+  /// Get transaction extensions (V16 only)
+  ///
+  /// Returns empty list for V14/V15.
+  List<TransactionExtensionMetadata> get transactionExtensions {
+    final ExtrinsicMetadata ext = extrinsic;
+    if (ext is ExtrinsicMetadataV16) return ext.transactionExtensions;
+    return <TransactionExtensionMetadata>[];
+  }
 
   // ======================================================================
   // V15 SPECIFIC
   // ======================================================================
 
-  /// Get outer enum types (V15 only)
+  /// Get outer enum types (V15 and V16)
   OuterEnums? get outerEnums {
     if (prefixed.metadata case RuntimeMetadataV15(:final outerEnums)) {
+      return OuterEnums(
+        callType: outerEnums.callType,
+        eventType: outerEnums.eventType,
+        errorType: outerEnums.errorType,
+      );
+    }
+    if (prefixed.metadata case RuntimeMetadataV16(:final outerEnums)) {
       return OuterEnums(
         callType: outerEnums.callType,
         eventType: outerEnums.eventType,
@@ -646,6 +669,79 @@ class MetadataTypeRegistry {
     if (method == null) return null;
 
     return codecFor(method.output);
+  }
+
+  // ======================================================================
+  // V16 SPECIFIC
+  // ======================================================================
+
+  /// Get runtime API metadata (V16)
+  RuntimeApiMetadataV16? getRuntimeApiV16(final String apiName) {
+    if (prefixed.metadata case RuntimeMetadataV16(:final apis)) {
+      for (final api in apis) {
+        if (api.name == apiName) {
+          return api;
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Get a runtime API method by name (V16)
+  ///
+  /// Returns the method metadata if found, null otherwise.
+  RuntimeApiMethodMetadataV16? getRuntimeApiMethodV16(
+    final String apiName,
+    final String methodName,
+  ) {
+    final api = getRuntimeApiV16(apiName);
+    if (api == null) return null;
+
+    for (final method in api.methods) {
+      if (method.name == methodName) {
+        return method;
+      }
+    }
+    return null;
+  }
+
+  /// Get deprecation info for a pallet (V16 only)
+  ///
+  /// Returns null if using V14/V15 metadata or if pallet not found.
+  ItemDeprecationInfo? getPalletDeprecationInfo(final String palletName) {
+    final pallet = palletByName(palletName);
+    if (pallet is PalletMetadataV16) {
+      return pallet.deprecationInfo;
+    }
+    return null;
+  }
+
+  /// Get deprecation info for a storage entry (V16 only)
+  ///
+  /// Returns null if using V14/V15 metadata or if entry not found.
+  ItemDeprecationInfo? getStorageDeprecationInfo(
+    final String palletName,
+    final String storageName,
+  ) {
+    final storage = getStorageMetadata(palletName, storageName);
+    if (storage is StorageEntryMetadataV16) {
+      return storage.deprecationInfo;
+    }
+    return null;
+  }
+
+  /// Get deprecation info for a constant (V16 only)
+  ///
+  /// Returns null if using V14/V15 metadata or if constant not found.
+  ItemDeprecationInfo? getConstantDeprecationInfo(
+    final String palletName,
+    final String constantName,
+  ) {
+    final constant = getConstantMetadata(palletName, constantName);
+    if (constant is PalletConstantMetadataV16) {
+      return constant.deprecationInfo;
+    }
+    return null;
   }
 
   // ======================================================================
