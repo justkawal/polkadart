@@ -103,6 +103,19 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 2
+          lfs: true
+
+      # Cache Git LFS objects
+      - name: Cache Git LFS
+        uses: actions/cache@v5
+        with:
+          path: .git/lfs
+          key: ${{ runner.os }}-lfs-${{ hashFiles('.gitattributes', 'chain/**') }}
+          restore-keys: |
+            ${{ runner.os }}-lfs-
+
+      - name: Git LFS Pull
+        run: git lfs pull
 
       # Cache Flutter SDK
       - name: Cache Flutter SDK

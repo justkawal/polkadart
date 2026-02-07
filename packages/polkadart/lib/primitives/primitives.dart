@@ -21,6 +21,7 @@ import 'package:polkadart_scale_codec/polkadart_scale_codec.dart'
         StrCodec;
 
 part 'api_version.dart';
+part 'chain_head_event.dart';
 part 'chain_type.dart';
 part 'extrinsic_status.dart';
 part 'event_record.dart';

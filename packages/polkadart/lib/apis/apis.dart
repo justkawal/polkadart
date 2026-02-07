@@ -7,6 +7,8 @@ import 'package:polkadart/models/models.dart' show BlockHeader, ChainData;
 import 'package:polkadart/primitives/primitives.dart'
     show
         BlockHash,
+        ChainHeadEvent,
+        ChainHeadOperationResult,
         ChainType,
         Events,
         ExtrinsicStatus,
@@ -18,6 +20,7 @@ import 'package:polkadart/primitives/primitives.dart'
         StorageChangeSet,
         StorageData,
         StorageKey,
+        StorageQueryItem,
         SyncState;
 import 'dart:async' show Future, Completer, StreamController, FutureOr;
 import 'dart:convert' show jsonEncode, jsonDecode;
@@ -30,6 +33,9 @@ import 'package:substrate_metadata/substrate_metadata.dart' show RuntimeMetadata
 part 'author.dart';
 part 'chain_data_fetcher.dart';
 part 'chain.dart';
+part 'chain_head.dart';
+part 'chain_spec.dart';
 part 'state.dart';
 part 'system.dart';
+part 'transaction.dart';
 part 'provider.dart';

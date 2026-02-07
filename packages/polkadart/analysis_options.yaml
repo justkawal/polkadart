@@ -16,3 +16,4 @@ analyzer:
     use_string_in_part_of_directives: ignore
     unnecessary_library_name: ignore
     unintended_html_in_doc_comment: ignore
+    non_constant_identifier_names: ignore

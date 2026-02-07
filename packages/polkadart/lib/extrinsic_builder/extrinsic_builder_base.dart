@@ -14,7 +14,12 @@ import 'package:polkadart_scale_codec/utils/utils.dart' show encodeHex;
 import 'package:ss58/ss58.dart' show Address;
 import 'package:substrate_metadata/chain/chain_info.dart' show ChainInfo;
 import 'package:substrate_metadata/derived_codecs/derived_codecs.dart' show Era;
-import 'package:substrate_metadata/metadata/metadata.dart' show SignedExtensionMetadata;
+import 'package:substrate_metadata/metadata/metadata.dart'
+    show
+        ExtrinsicMetadata,
+        ExtrinsicMetadataV16,
+        SignedExtensionMetadata,
+        TransactionExtensionMetadata;
 import 'package:substrate_metadata/substrate_hashers/substrate_hashers.dart' show Hasher;
 
 // extrinsic_encoder
