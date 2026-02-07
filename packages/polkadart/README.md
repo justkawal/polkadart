@@ -492,11 +492,13 @@ void main() async {
 ## Features
 
 - **Fluent Extrinsic Builder** - Type-safe, chainable API for building transactions
-- **Automatic Signed Extensions** - No manual extension handling required
+- **Transaction Format V5 Support** - Automatic version detection from metadata; supports signed (0x85), bare (0x05), and general (0x45) extrinsics alongside V4 fallback
+- **Automatic Signed/Transaction Extensions** - Unified extension handling for both V14/V15 (signed extensions) and V16 (transaction extensions)
+- **New JSON-RPC APIs** - `ChainSpecApi`, `ChainHeadApi`, and `TransactionApi` implementing the Substrate JSON-RPC v1 specification
 - **Parallel Data Fetching** - Efficient chain data retrieval via `ChainDataFetcher`
 - **Balances Module** - Pre-built calls for common balance operations
 - **Multisig Support** - Complete multisig transaction management
-- **RPC APIs** - Full coverage of author, chain, state, and system APIs
+- **RPC APIs** - Full coverage of author, chain, state, system, chainSpec, chainHead, and transaction APIs
 - **Provider Abstraction** - HTTP and WebSocket support with subscriptions
 
 ## RPC APIs
@@ -558,6 +560,203 @@ await authorApi.submitAndWatchExtrinsic(encodedExtrinsic, (status) {
     print('Finalized in block: ${status.blockHash}');
   }
 });
+```
+
+## New JSON-RPC APIs (Substrate JSON-RPC v1 Specification)
+
+These APIs implement the new Substrate JSON-RPC specification, replacing the legacy `chain_*`, `state_*`, and `author_*` methods.
+
+### ChainSpecApi
+
+Query chain specification information.
+
+```dart
+final chainSpecApi = ChainSpecApi(provider);
+
+// Get genesis block hash
+final genesisHash = await chainSpecApi.genesisHash();
+print('Genesis: $genesisHash');
+// e.g., "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3"
+
+// Get human-readable chain name
+final name = await chainSpecApi.chainName();
+print('Chain: $name'); // e.g., "Polkadot"
+
+// Get chain properties (ss58 format, token info)
+final props = await chainSpecApi.properties();
+print('SS58 format: ${props['ss58Format']}');       // e.g., 0
+print('Token symbol: ${props['tokenSymbol']}');      // e.g., "DOT"
+print('Token decimals: ${props['tokenDecimals']}');  // e.g., 10
+```
+
+### ChainHeadApi
+
+Follow the chain head using a session-based subscription model.
+
+```dart
+final chainHeadApi = ChainHeadApi(provider);
+
+// Start following the chain head (creates a session)
+final session = await chainHeadApi.follow(withRuntime: true);
+
+// Listen to typed chain head events
+session.stream.listen((event) {
+  switch (event) {
+    case ChainHeadInitialized():
+      print('Initialized at: ${event.finalizedBlockHash}');
+    case ChainHeadNewBlock():
+      print('New block: ${event.blockHash}, parent: ${event.parentBlockHash}');
+    case ChainHeadBestBlockChanged():
+      print('Best block: ${event.bestBlockHash}');
+    case ChainHeadFinalized():
+      print('Finalized: ${event.finalizedBlockHashes}');
+      print('Pruned: ${event.prunedBlockHashes}');
+    case ChainHeadStop():
+      print('Subscription stopped by server');
+    case ChainHeadOperationBodyDone():
+      print('Body for op ${event.operationId}: ${event.value.length} extrinsics');
+    case ChainHeadOperationCallDone():
+      print('Call result for op ${event.operationId}: ${event.output}');
+    case ChainHeadOperationStorageItems():
+      for (final item in event.items) {
+        print('Storage key: ${item.key}, value: ${item.value}, hash: ${item.hash}');
+      }
+    case ChainHeadOperationStorageDone():
+      print('Storage query complete for op ${event.operationId}');
+    case ChainHeadOperationError():
+      print('Operation ${event.operationId} failed: ${event.error}');
+    case ChainHeadOperationInaccessible():
+      print('Block unpinned before operation ${event.operationId} completed');
+  }
+});
+
+// Query a pinned block's header
+final header = await session.header('0xBlockHash...');
+
+// Request block body (returns operation result)
+final bodyResult = await session.body('0xBlockHash...');
+if (bodyResult.isStarted) {
+  print('Body operation started: ${bodyResult.operationId}');
+  // Results arrive via the event stream as ChainHeadOperationBodyDone
+}
+
+// Query storage items
+final storageResult = await session.storage(
+  '0xBlockHash...',
+  [
+    StorageQueryItem(key: '0xStorageKey...', queryType: 'value'),
+    StorageQueryItem(key: '0xAnotherKey...', queryType: 'hash'),
+  ],
+);
+
+// Make a runtime call
+final callResult = await session.call(
+  '0xBlockHash...',
+  'Metadata_metadata',
+  '0x',
+);
+
+// Unpin blocks you no longer need
+await session.unpin(['0xBlockHash1...', '0xBlockHash2...']);
+
+// Check session state
+print('Session active: ${session.isActive}');
+
+// Clean up when done
+await session.unfollow();
+```
+
+### TransactionApi
+
+Broadcast and manage transactions using subscriptions.
+
+```dart
+final transactionApi = TransactionApi(provider);
+
+// Broadcast an encoded extrinsic
+final broadcast = await transactionApi.broadcast(encodedExtrinsicBytes);
+print('Operation ID: ${broadcast.operationId}');
+
+// Listen to broadcast events
+broadcast.stream.listen((event) {
+  print('Transaction event: $event');
+});
+
+// Stop a broadcast
+await transactionApi.stop(broadcast.operationId);
+```
+
+## Transaction Format V5
+
+The `polkadart` package automatically detects and uses the correct extrinsic format based on the chain's metadata:
+
+- **V16 metadata** with `versions: [4, 5]` -> Uses **V5** (new format)
+- **V14/V15 metadata** -> Uses **V4** (traditional format)
+
+### Version Detection
+
+No code changes are needed. The `ExtrinsicBuilder` and `ExtrinsicEncoder` automatically detect the version:
+
+```dart
+// Works the same for both V4 and V5 - version is auto-detected from metadata
+final txHash = await ExtrinsicBuilder.quickSend(
+  provider: provider,
+  chainInfo: chainInfo,  // V16 metadata -> V5, V14/V15 metadata -> V4
+  callData: callData,
+  signerAddress: keyPair.address,
+  signingCallback: keyPair.sign,
+);
+```
+
+### V5 Encoding Formats
+
+V5 introduces three encoding modes:
+
+| Mode | Version Byte | Description |
+|------|:------------:|-------------|
+| **Bare** | `0x05` | Unsigned/inherent extrinsics (no signature, no extensions) |
+| **Signed** | `0x85` | Traditional signed extrinsics (signature + extensions + call) |
+| **General** | `0x45` | Extensions without a signature (V5 only) |
+
+```dart
+final encoder = ExtrinsicEncoder(chainInfo);
+
+// Check detected version
+print('Extrinsic version: ${encoder.extrinsicVersion}'); // 4 or 5
+
+// Signed extrinsic (0x84 for V4, 0x85 for V5)
+final signedBytes = encoder.encode(signedData);
+
+// Bare/unsigned extrinsic (0x04 for V4, 0x05 for V5)
+final bareBytes = encoder.encodeUnsigned(callData);
+
+// General extrinsic (0x45, V5 only - throws on V4)
+final generalBytes = encoder.encodeGeneral(
+  callData: callData,
+  extensions: extensionBuilder.extensions,
+  extensionVersion: 0,
+);
+```
+
+### Unified Extension Handling
+
+The extension system transparently handles both V14/V15 signed extensions and V16 transaction extensions:
+
+```dart
+// ExtensionBuilder works identically for V4 and V5
+final extensionBuilder = ExtensionBuilder(chainInfo);
+extensionBuilder.setStandardExtensions(
+  specVersion: specVersion,
+  transactionVersion: transactionVersion,
+  genesisHash: genesisHash,
+  blockHash: blockHash,
+  blockNumber: blockNumber,
+  nonce: nonce,
+  eraPeriod: 64,
+);
+
+// Validate extension configuration
+extensionBuilder.validate();
 ```
 
 ## Extrinsic Building

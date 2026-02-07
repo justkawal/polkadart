@@ -205,11 +205,17 @@ final apiCodec = registry.getRuntimeApiOutputCodec('Core', 'version');
 
 ## Features
 
-- **Metadata V14 & V15 Support** - Full support for modern Substrate metadata formats
+- **Metadata V14, V15 & V16 Support** - Full support for all modern Substrate metadata formats
+- **V16 Deprecation Tracking** - Query deprecation status of pallets, calls, events, errors, constants, and runtime APIs
+- **V16 Associated Types** - Access pallet Config trait associated types (names, type IDs, documentation)
+- **V16 View Functions** - Read-only query functions with 32-byte identifiers
+- **V16 Transaction Extensions** - New extension model replacing signed extensions, with version-aware selection
+- **Extrinsic V4 & V5 Decoding** - Decode signed (0x84/0x85), bare (0x04/0x05), and general (0x45) extrinsics
 - **Complete Type System** - Portable type registry with all Substrate type definitions
 - **Event Decoding/Encoding** - Decode and encode runtime events with full type safety
 - **Extrinsic Handling** - Parse and construct signed/unsigned extrinsics
 - **Constants Access** - Easy access to runtime constants with lazy loading support
+- **Metadata Merkleization** - Blake3-based digest computation and proof generation for V14/V15/V16
 - **Storage Hashers** - Blake2b, Blake3, and XXHash implementations for storage key generation
 - **Cross-Platform** - Works on Flutter, Dart VM, and Web (WASM compatible)
 - **Zero Configuration** - Automatically adapts to any Substrate-based chain via metadata
@@ -300,12 +306,19 @@ class RuntimeEvent {
 
 ```dart
 class UncheckedExtrinsic {
-  final int version;                    // Extrinsic version (usually 4)
-  final ExtrinsicSignature? signature;  // null for unsigned
+  final int version;                    // Extrinsic version (4 or 5)
+  final ExtrinsicSignature? signature;  // null for unsigned/bare
   final RuntimeCall call;               // The actual call
 
   bool get isSigned => signature != null;
 }
+
+// V5 introduces the ExtrinsicType enum:
+enum ExtrinsicType { signed, bare, general }
+
+// Version byte mapping:
+// V4: 0x04 (bare), 0x84 (signed)
+// V5: 0x05 (bare), 0x85 (signed), 0x45 (general)
 ```
 
 ### RuntimeCall
@@ -355,22 +368,23 @@ Unlike traditional SDKs that require compile-time type definitions, `substrate_m
 
 | Component | Purpose |
 |-----------|---------|
-| `RuntimeMetadataPrefixed` | Decoded metadata with version detection |
+| `RuntimeMetadataPrefixed` | Decoded metadata with version detection (V14/V15/V16) |
 | `MetadataTypeRegistry` | Core type resolution and codec generation |
 | `ChainInfo` | High-level facade for common operations |
 | `EventsRecordCodec` | Decode/encode event records |
-| `ExtrinsicsCodec` | Decode/encode block extrinsics |
+| `ExtrinsicsCodec` | Decode/encode block extrinsics (V4 and V5 format) |
 | `ConstantsCodec` | Access runtime constants |
+| `MetadataMerkleizer` | Compute metadata digest and generate merkle proofs |
 
 ## Metadata Versions
 
-### V14 (Current Standard)
+### V14
 
 - Portable type registry
 - Pallet metadata (calls, events, errors, constants, storage)
 - Extrinsic metadata with signed extensions
 
-### V15 (Latest)
+### V15
 
 Everything in V14, plus:
 
@@ -387,6 +401,129 @@ if (registry.outerEnums != null) {
 }
 ```
 
+### V16 (Latest)
+
+Everything in V15, plus:
+
+- **Transaction Extensions**: Replace signed extensions with version-aware transaction extensions
+- **Deprecation Tracking**: Mark pallets, calls, events, errors, constants, storage entries, and runtime APIs as deprecated
+- **Associated Types**: Expose pallet Config trait associated types (e.g., `AccountId`, `BlockNumber`)
+- **View Functions**: Read-only query functions with 32-byte identifiers and typed inputs/outputs
+- **Runtime API Versioning**: Explicit version field and per-method deprecation on runtime APIs
+- **Multi-Version Extrinsic Support**: Metadata declares supported extrinsic versions (e.g., `[4, 5]`)
+
+```dart
+// Decode V16 metadata (version routing is automatic)
+final prefixed = RuntimeMetadataPrefixed.fromBytes(metadataBytes);
+final chainInfo = prefixed.buildChainInfo();
+
+// Access V16-specific features on the raw metadata
+final metadata = prefixed.metadata;
+if (metadata is RuntimeMetadataV16) {
+  // Transaction extensions (replacing signed extensions)
+  final extrinsic = metadata.extrinsic as ExtrinsicMetadataV16;
+  print('Supported versions: ${extrinsic.versions}'); // e.g., [4, 5]
+  final extensions = extrinsic.extensionsForVersion(5);
+  for (final ext in extensions) {
+    print('Extension: ${ext.identifier}, type: ${ext.type}, implicit: ${ext.implicit}');
+  }
+
+  // Deprecation tracking
+  for (final pallet in metadata.pallets) {
+    if (pallet.deprecationInfo.isDeprecated) {
+      print('${pallet.name} is deprecated: ${pallet.deprecationInfo.note}');
+    }
+
+    // Per-variant deprecation on calls
+    if (pallet.callsV16 != null) {
+      final callDeprecation = pallet.callsV16!.deprecationInfo;
+      // Check if a specific call variant is deprecated
+      if (callDeprecation.isVariantDeprecated(0)) {
+        final info = callDeprecation.getVariantDeprecation(0);
+        print('Call variant 0 deprecated: ${info?.note}');
+      }
+    }
+  }
+
+  // Associated types
+  for (final pallet in metadata.pallets) {
+    for (final assocType in pallet.associatedTypes) {
+      print('${pallet.name}.${assocType.name}: type ID ${assocType.type}');
+    }
+  }
+
+  // View functions
+  for (final pallet in metadata.pallets) {
+    for (final viewFn in pallet.viewFunctions) {
+      print('${pallet.name}.${viewFn.name}: ${viewFn.inputs.length} inputs, '
+            'output type ${viewFn.output}');
+      if (viewFn.deprecationInfo.isDeprecated) {
+        print('  (deprecated: ${viewFn.deprecationInfo.note})');
+      }
+    }
+  }
+
+  // Runtime API versioning
+  for (final api in metadata.apis) {
+    print('${api.name} v${api.version}');
+    if (api.deprecationInfo.isDeprecated) {
+      print('  Deprecated: ${api.deprecationInfo.note}');
+    }
+    for (final method in api.methods) {
+      if (method.deprecationInfo.isDeprecated) {
+        print('  ${method.name} is deprecated');
+      }
+    }
+  }
+}
+```
+
+#### V16 Deprecation Model
+
+V16 introduces a three-tier deprecation system:
+
+```dart
+// 1. ItemDeprecationInfo - for pallets, constants, storage, APIs
+//    Variants: ItemNotDeprecated, ItemDeprecatedWithoutNote, ItemDeprecated
+sealed class ItemDeprecationInfo {
+  bool get isDeprecated;
+  String? get note;   // Deprecation message (if provided)
+  String? get since;  // Version since deprecated (if provided)
+}
+
+// 2. VariantDeprecationInfo - for individual call/event/error variants
+//    Variants: VariantDeprecatedWithoutNote, VariantDeprecated
+sealed class VariantDeprecationInfo {
+  String? get note;
+  String? get since;
+}
+
+// 3. EnumDeprecationInfo - maps variant indices to their deprecation info
+class EnumDeprecationInfo {
+  bool isVariantDeprecated(int variantIndex);
+  VariantDeprecationInfo? getVariantDeprecation(int variantIndex);
+}
+```
+
+#### V16 Backward Compatibility
+
+Version routing is automatic. Code that works with V14/V15 continues to work unchanged:
+
+```dart
+// This works regardless of metadata version (V14, V15, or V16)
+final prefixed = RuntimeMetadataPrefixed.fromBytes(metadataBytes);
+final chainInfo = prefixed.buildChainInfo();
+
+// Unified access via extension methods across all versions
+final pallets = chainInfo.registry.metadata.pallets;
+final extrinsic = chainInfo.registry.metadata.extrinsic;
+final types = chainInfo.registry.metadata.types;
+
+// Decode events and extrinsics the same way for all versions
+final events = chainInfo.eventsCodec.decode(Input.fromHex(eventsHex));
+final extrinsics = chainInfo.extrinsicsCodec.decode(Input.fromHex(blockExtrinsicsHex));
+```
+
 ---
 
 # Breaking Changes from 2.0.0 Version
@@ -395,14 +532,14 @@ This is a **major rewrite** of the `substrate_metadata` package. If you're upgra
 
 ### Removed: Legacy Metadata Support (V9-V13)
 
-The new implementation **only supports Metadata V14 and V15**. Support for legacy metadata versions V9 through V13 has been removed.
+The new implementation **only supports Metadata V14, V15, and V16**. Support for legacy metadata versions V9 through V13 has been removed.
 
 ```dart
 // OLD: Legacy versions were supported
 final metadata = MetadataDecoder.instance.decode(hexString); // Worked with V9-V15
 
-// NEW: Only V14 and V15 are supported
-final prefixed = RuntimeMetadataPrefixed.fromBytes(bytes); // V14 or V15 only
+// NEW: Only V14, V15, and V16 are supported
+final prefixed = RuntimeMetadataPrefixed.fromBytes(bytes); // V14, V15, or V16
 ```
 
 **Impact**: If you're connecting to chains running very old runtimes (pre-V14), you'll need to upgrade those chains or use the legacy version of this package.
@@ -442,7 +579,7 @@ final metadata = decoded.metadata;
 final prefixed = RuntimeMetadataPrefixed.fromHex(hexString);
 // or
 final prefixed = RuntimeMetadataPrefixed.fromBytes(bytes);
-final metadata = prefixed.metadata; // RuntimeMetadataV14 or RuntimeMetadataV15
+final metadata = prefixed.metadata; // RuntimeMetadataV14, RuntimeMetadataV15, or RuntimeMetadataV16
 ```
 
 ### Removed: `DecodedMetadata`, `RawBlockExtrinsics`, `RawBlockEvents`
