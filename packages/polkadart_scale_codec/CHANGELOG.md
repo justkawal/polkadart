@@ -1,3 +1,7 @@
+## 2.0.1
+
+- Updated `equatable` dependency constraint to `^2.0.8`
+
 ## 2.0.0
 
 ### Breaking Changes
