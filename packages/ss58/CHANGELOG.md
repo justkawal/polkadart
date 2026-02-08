@@ -1,3 +1,8 @@
+## 2.0.1
+
+- Updated `equatable` dependency constraint to `^2.0.8`
+- Updated `json_annotation` dependency constraint to `^4.10.0`
+
 ## 2.0.0
 
 ### Breaking Changes

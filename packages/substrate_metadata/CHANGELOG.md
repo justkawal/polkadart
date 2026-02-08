@@ -1,3 +1,11 @@
+## 2.1.0
+
+### Changed
+- Updated `SignedExtensionsCodec` for V16 compatibility
+- Updated `UncheckedExtrinsicCodec` for V16 extrinsic format
+- Updated `MetadataTypeRegistry` for V16 type resolution
+- Updated merkleization utilities
+
 ## 2.0.0
 
 ### Breaking Changes

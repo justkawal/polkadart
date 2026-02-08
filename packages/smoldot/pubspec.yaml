@@ -1,6 +1,6 @@
 name: smoldot
 description: A Dart wrapper for smoldot-light, providing a lightweight Polkadot/Substrate client implementation via Rust FFI bindings
-version: 0.1.1
+version: 0.1.2
 homepage: https://github.com/leonardocustodio/polkadart/tree/main/packages/smoldot
 repository: https://github.com/leonardocustodio/polkadart
 resolution: workspace

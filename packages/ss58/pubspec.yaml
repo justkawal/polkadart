@@ -1,6 +1,6 @@
 name: ss58
 description: Provides encoding and decoding methods for parsing substrate SS58 addresses.
-version: 2.0.0
+version: 2.0.1
 homepage: https://github.com/leonardocustodio/polkadart/tree/main/packages/ss58
 repository: https://github.com/leonardocustodio/polkadart
 resolution: workspace

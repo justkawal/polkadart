@@ -1,3 +1,10 @@
+## 1.1.0
+
+### Changed
+- Updated extrinsic builder with extension builder support
+- Updated extrinsic encoder for V5 format
+- Updated signing payload builder
+
 ## 1.0.0
 
 ### Breaking Changes

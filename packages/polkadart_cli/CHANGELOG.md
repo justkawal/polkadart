@@ -1,3 +1,7 @@
+## 1.0.1
+
+- Fixed multi-query methods to decode storage value instead of key
+
 ## 1.0.0
 
 ### Breaking Changes
