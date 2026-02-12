@@ -9,7 +9,7 @@ environment:
   sdk: ^3.8.0
 
 dependencies:
-  ffi: ^2.1.5
+  ffi: ^2.2.0
   meta: ^1.18.1
   path: ^1.9.0
   convert: ^3.1.1
