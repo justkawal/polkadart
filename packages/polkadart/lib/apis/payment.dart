@@ -121,11 +121,7 @@ class PaymentApi<P extends Provider> {
       tip: tip,
     );
 
-    return getFee(
-      builder: builder,
-      signerAddress: signerAddress,
-      signatureType: signatureType,
-    );
+    return getFee(builder: builder, signerAddress: signerAddress, signatureType: signatureType);
   }
 
   Uint8List _createDummySignature(final SignatureType type) {
@@ -139,4 +135,3 @@ class PaymentApi<P extends Provider> {
     }
   }
 }
-
