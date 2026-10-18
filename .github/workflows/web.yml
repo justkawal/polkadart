@@ -47,3 +47,16 @@ jobs:
       - name: ss58
         working-directory: packages/ss58
         run: dart test -p chrome -c ${{ matrix.compiler }}
+
+      # sr25519 pulls in strobe, merlin and ristretto255, which have needed
+      # web fixes before. PBKDF2 is slow on the web, hence the longer timeout.
+      - name: sr25519
+        working-directory: packages/sr25519
+        run: dart test -p chrome -c ${{ matrix.compiler }} --timeout 120s
+
+      # dart2js only: ed25519_edwards depends on adaptive_number, which has no
+      # implementation for dart2wasm (it only checks dart.library.io/html).
+      - name: polkadart_keyring
+        if: matrix.compiler == 'dart2js'
+        working-directory: packages/polkadart_keyring
+        run: dart test -p chrome -c ${{ matrix.compiler }} --timeout 120s
