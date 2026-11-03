@@ -1,0 +1,62 @@
+name: Web Tests
+
+# Guards against code that only works with native 64-bit integers, which
+# breaks dart2js (Flutter web) builds. dart2wasm is tested as well.
+
+on:
+  pull_request:
+    paths:
+      - "packages/**"
+      - "pubspec.yaml"
+      - ".github/workflows/web.yml"
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: ${{ matrix.compiler }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [dart2js, dart2wasm]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: substrate_metadata
+        working-directory: packages/substrate_metadata
+        run: dart test -p chrome -c ${{ matrix.compiler }} test/xxh64_test.dart test/hashers_test.dart
+
+      - name: polkadart
+        working-directory: packages/polkadart
+        run: dart test -p chrome -c ${{ matrix.compiler }} test/web
+
+      - name: ss58
+        working-directory: packages/ss58
+        run: dart test -p chrome -c ${{ matrix.compiler }}
+
+      # sr25519 pulls in strobe, merlin and ristretto255, which have needed
+      # web fixes before. PBKDF2 is slow on the web, hence the longer timeout.
+      - name: sr25519
+        working-directory: packages/sr25519
+        run: dart test -p chrome -c ${{ matrix.compiler }} --timeout 120s
+
+      # dart2js only: ed25519_edwards depends on adaptive_number, which has no
+      # implementation for dart2wasm (it only checks dart.library.io/html).
+      - name: polkadart_keyring
+        if: matrix.compiler == 'dart2js'
+        working-directory: packages/polkadart_keyring
+        run: dart test -p chrome -c ${{ matrix.compiler }} --timeout 120s

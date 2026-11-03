@@ -118,7 +118,8 @@ class CompactCodec with Codec<int> {
       output.pushByte(((bytesNeeded - 4) << 2).toUnsigned(8) | 3);
       for (var i = 0; i < bytesNeeded; i++) {
         output.pushByte(value.toUnsigned(8).toInt());
-        value >>= 8;
+        // Not `>>= 8`: on JavaScript shifts truncate to 32 bits.
+        value = value ~/ 256;
       }
       assertion(value == 0, 'Value is not fully consumed; qed');
     }
@@ -151,8 +152,11 @@ class CompactCodec with Codec<int> {
         {
           final bytesNeeded = (prefix >> 2) + 4;
           var value = 0;
+          var factor = 1;
           for (var i = 0; i < bytesNeeded; i++) {
-            value |= input.read() << (8 * i);
+            // Not `|= byte << (8 * i)`: on JavaScript shifts truncate to 32 bits.
+            value += input.read() * factor;
+            factor *= 256;
           }
           assertion(value > 0x3fffffff, 'Out of range');
           return value;
